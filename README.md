@@ -1,0 +1,222 @@
+# Dice-GUI
+
+A PyQt6-based graphical frontend for visualizing time-dependent simulation data from DICE/Ising-type simulations.
+
+The application is intended to display dynamic variables living on a circular coordinate, evolving over simulation time. The current focus is file-based visualization; future versions are expected to support streaming data from simulation backends.
+
+## Project Status
+
+This project is currently in early development.
+
+The initial proof-of-concept demonstrated the usefulness of the visualization and helped identify desired functionality. The current development effort is focused on improving the architecture so that the application can support:
+
+- multiple input data formats (supported through parser plugins),
+- interactive point selection,
+- zooming and filtering,
+- plotting selected point histories,
+- optional static simulation metadata,
+- communication with live simulation backends.
+
+## What the Application Visualizes
+
+The dynamic simulation data at each time step consists of an array of pairs:
+
+```text
+(s, X)
+```
+
+where:
+
+```text
+s ∈ {-1, 1}
+X ∈ [-1, 1]
+```
+
+The endpoints of the `X` interval are identified, so `X` is naturally represented as a coordinate on a circle.
+
+The current visualization displays each pair as a small circle positioned according to `X`, with color determined by `s`.
+
+For example:
+
+- `s = 1` may be shown in red,
+- `s = -1` may be shown in blue.
+
+Future visualization options may include arrows or combined color/arrow rendering.
+
+## Current Input Format ("Raw data")
+
+The current parser expects a text file where each line corresponds to one time step.
+
+Each line has the format:
+
+```text
+time spin_0 x_0 spin_1 x_1 spin_2 x_2 ...
+```
+
+Example:
+
+```text
+0.000 1 0.011 1 0.305 -1 -0.357
+0.010 1 0.015 -1 0.301 -1 -0.360
+0.020 -1 0.020 -1 0.299 1 -0.365
+```
+
+The first value is the simulation time.
+
+The remaining values are spin/coordinate pairs: `(s_i, x_i)`
+
+## Planned Features
+
+Planned or desired functionality includes:
+
+- [x] File-based loading of dynamic simulation data.
+- [x] Time slider for moving through frames.
+- [x] Play/pause animation.
+- [x] Circular visualization of dynamic variables.
+- [ ] Parser abstraction for multiple file formats.
+- [ ] Parser plugin support.
+- [ ] Point selection by mouse.
+- [ ] Point selection by index.
+- [ ] Display of selected point state:
+  - time,
+  - point index,
+  - spin value,
+  - `X` coordinate.
+- [ ] Zooming into a region of the circle.
+- [ ] Hiding selected points.
+- [ ] Showing only selected points.
+- [ ] Plotting selected point histories over time.
+- [ ] Optional static graph/simulation metadata support.
+- [ ] Backend streaming mode.
+- [ ] Backend feedback/control messages.
+
+## Installation
+
+### 1. Clone the repository
+
+```bash
+git clone <repository-url>
+cd Dice-GUI
+```
+
+### 2. Create a project-specific virtual environment
+
+On Linux/macOS:
+
+```bash
+python3 -m venv .venv
+```
+
+A project-specific virtual environment is recommended. `.gitignore` contains a "default" location for the environment to prevent committing it.
+
+```gitignore
+.venv/
+...
+```
+
+To activate the envirnoment, for `fish` shell:
+
+```fish
+source .venv/bin/activate.fish
+```
+
+For `bash` or `zsh`:
+
+```bash
+source .venv/bin/activate
+```
+
+### 3. Upgrade pip
+
+```bash
+python -m pip install --upgrade pip
+```
+
+### 4. Install dependencies
+
+At the current development stage:
+
+```bash
+python -m pip install PyQt6 numpy
+```
+
+Additional dependencies may be added later, for example:
+
+```bash
+python -m pip install pyqtgraph pytest
+```
+
+Eventually this project may provide a `pyproject.toml` with installable dependencies.
+
+## Running the Application
+
+During development, run:
+
+```bash
+python -m dice_gui.main
+```
+
+or, depending on the current layout:
+
+```bash
+python dice_gui/main.py
+```
+
+If command-line file loading is enabled, the application may support direct loading the data file directly:
+
+```bash
+python -m dice_gui.main path/to/data.dat
+```
+
+## Testing
+
+Tests are not yet fully established, but parser tests are a natural first target.
+
+Example future command:
+
+```bash
+pytest
+```
+
+Potential test areas:
+
+- parsing valid files,
+- rejecting malformed files,
+- validating spin values,
+- validating `X ∈ [-1, 1]`,
+- validating consistent node counts across time steps,
+- checking `SimulationData.frame()` behavior.
+
+## Roadmap
+
+Short-term:
+
+1. Add basic parser validation and user-facing error messages.
+
+Medium-term:
+
+1. Add point selection.
+2. Add point information panel.
+3. Add zooming/filtering.
+4. Add selected-point plotting.
+5. Add support for multiple text-based data formats.
+
+Long-term:
+
+1. Add plugin infrastructure.
+2. Add static graph/simulation metadata.
+3. Add backend streaming support.
+4. Add communication with simulation backends.
+5. Integrate with or support workflows based on the Julia `Dice` library.
+
+## Acknowledgments
+
+This project builds on the proof-of-concept work from:
+
+- [dice-stack-GUI](https://github.com/gtsanyal/dice-stack-GUI)
+
+Related simulation-side development and software references are collected in the Julia library:
+
+- [Dice](https://github.com/merement/Dice)
+
+## License

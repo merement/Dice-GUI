@@ -1,9 +1,19 @@
-# app/parsers.py
+# dice_gui/parsers.py
+#
+# Implements the parsers for the simulation data files.
+# TimeSpinXParser (raw data parser) parses files of the form:
+#
+#     time spin_0 x_0 spin_1 x_1 spin_2 x_2 ...
+#
+# Example:
+#
+#     0.011 1 0.305 1 -0.357 -1 0.800
 
 from pathlib import Path
+
 import numpy as np
 
-from domain import SimulationData
+from dice_gui.domain import SimulationData
 
 
 class ParseError(Exception):
@@ -118,4 +128,3 @@ class TimeSpinXParser:
             spins=np.array(all_spins, dtype=np.int8),
             x_values=np.array(all_x_values, dtype=float),
         )
-    

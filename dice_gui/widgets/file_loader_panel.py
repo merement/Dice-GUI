@@ -1,10 +1,10 @@
 # dice_gui/widgets/file_loader_panel.py
 
-from PyQt6.QtWidgets import QWidget, QVBoxLayout, QPushButton, QFileDialog, QMessageBox
 from PyQt6.QtCore import pyqtSignal
+from PyQt6.QtWidgets import QFileDialog, QMessageBox, QPushButton, QVBoxLayout, QWidget
 
-from dice_gui.parsers import TimeSpinXParser, ParseError
 from dice_gui.domain import SimulationData
+from dice_gui.parsers import ParseError, TimeSpinXParser
 
 
 class FileLoaderPanel(QWidget):
@@ -14,6 +14,8 @@ class FileLoaderPanel(QWidget):
         super().__init__()
 
         self.read_button = QPushButton("Read .dat File", self)
+        # By default, use TimeSpinXParser to parse the file
+        # TODO: Add support for other parsers
         self.parser = TimeSpinXParser()
 
         self.setupUI()

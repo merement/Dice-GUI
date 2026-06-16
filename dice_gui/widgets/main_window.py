@@ -3,12 +3,19 @@
 #  connects widgets
 #  manages current loaded data
 
-from PyQt6.QtWidgets import QWidget, QVBoxLayout, QHBoxLayout, QSlider, QLabel, QPushButton
 from PyQt6.QtCore import Qt, QTimer
+from PyQt6.QtWidgets import (
+    QHBoxLayout,
+    QLabel,
+    QPushButton,
+    QSlider,
+    QVBoxLayout,
+    QWidget,
+)
 
-from widgets.circle_view import CircleView
-from widgets.file_loader_panel import FileLoaderPanel
-from parsers import TimeSpinXParser, ParseError
+from dice_gui.parsers import ParseError, TimeSpinXParser
+from dice_gui.widgets.circle_view import CircleView
+from dice_gui.widgets.file_loader_panel import FileLoaderPanel
 
 
 class MainWindow(QWidget):
@@ -32,10 +39,10 @@ class MainWindow(QWidget):
         self.time_slider = QSlider(Qt.Orientation.Horizontal, self)
         self.time_label = QLabel("0.000", self)
 
-        self.progress_button = QPushButton("Increase Time", self)
+        self.progress_button = QPushButton("Step Forward", self)
         self.progress_button.clicked.connect(self.progress)
 
-        self.regress_button = QPushButton("Decrease Time", self)
+        self.regress_button = QPushButton("Step Backward", self)
         self.regress_button.clicked.connect(self.regress)
 
         self.play_pause_button = QPushButton("Play", self)

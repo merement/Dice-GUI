@@ -2,11 +2,16 @@
 
 import math
 
-from PyQt6.QtWidgets import QWidget, QHBoxLayout
 from PyQt6.QtCore import QPointF, Qt
-from PyQt6.QtGui import QPainter, QBrush, QColor, QPen
+from PyQt6.QtGui import QBrush, QColor, QPainter, QPen
+from PyQt6.QtWidgets import QHBoxLayout, QWidget
 
-from domain import DynamicFrame
+from dice_gui.domain import DynamicFrame
+
+COLOR_CIRCLE = QColor(125, 125, 125)
+COLOR_SPIN_UP = QColor(255, 0, 0)
+COLOR_SPIN_DOWN = QColor(0, 0, 255)
+COLOR_SPIN_NONE = QColor(100, 100, 100)
 
 
 class CircleView(QWidget):
@@ -45,7 +50,7 @@ class CircleView(QWidget):
         painter.end()
 
     def _draw_base_circle(self, painter: QPainter):
-        pen = QPen(QColor(125, 125, 125))
+        pen = QPen(COLOR_CIRCLE)
         pen.setWidth(2)
         painter.setPen(pen)
         painter.setBrush(Qt.BrushStyle.NoBrush)
@@ -65,7 +70,7 @@ class CircleView(QWidget):
             self.circle_radius,
         )
 
-        # 0 marker
+        # Boundary marker
         marker_x = self.circle_center.x()
         marker_y = self.circle_center.y() - self.circle_radius
         painter.drawLine(
@@ -75,7 +80,7 @@ class CircleView(QWidget):
             int(marker_y + 10),
         )
 
-        # Boundary marker
+        # 0 marker
         boundary_center = QPointF(
             self.circle_center.x(),
             self.circle_center.y() + self.circle_radius,
@@ -91,11 +96,11 @@ class CircleView(QWidget):
 
     def _draw_node(self, painter: QPainter, spin: int, x_value: float):
         if spin == 1:
-            color = QColor(255, 0, 0)
+            color = COLOR_SPIN_UP
         elif spin == -1:
-            color = QColor(0, 0, 255)
+            color = COLOR_SPIN_DOWN
         else:
-            color = QColor(100, 100, 100)
+            color = COLOR_SPIN_NONE
 
         node_pos = self._x_to_screen_position(x_value)
 
@@ -109,8 +114,6 @@ class CircleView(QWidget):
         """
         Maps x in [-1, 1] to a position on the circle.
 
-        Current convention preserves your existing visual mapping:
-
             NodeX = cx - R * cos(pi * x + pi/2)
             NodeY = cy + R * sin(pi * x + pi/2)
 
@@ -123,6 +126,7 @@ class CircleView(QWidget):
         node_y = self.circle_center.y() + self.circle_radius * math.sin(angle)
 
         return QPointF(node_x, node_y)
+
 
 # it accepts a DynamicFrame.
 # Later, this can evolve into:

@@ -1,14 +1,15 @@
-# app/main.py
+# dice_gui/main.py
 # command-line argument parsing
+# (TODO) reading configuration file
 # QApplication setup
 # creates MainWindow
 
-import sys
 import argparse
+import sys
 
 from PyQt6.QtWidgets import QApplication
 
-from widgets.main_window import MainWindow
+from dice_gui.widgets.main_window import MainWindow
 
 
 def parse_args(argv: list[str]) -> argparse.Namespace:
@@ -38,3 +39,16 @@ def main() -> int:
 
 if __name__ == "__main__":
     raise SystemExit(main())
+
+# import json
+
+# CONFIG_NAME_DEFAULT = "config.json"
+# # Load the configurable parameters at runtime
+# with open(CONFIG_NAME_DEFAULT, "r") as f:
+#     CONFIG = json.load(f)
+
+# COLOR_SPIN_UP = QColor(255, 0, 0)
+# COLOR_SPIN_DOWN = QColor(0, 0, 255)
+
+# COLOR_SPIN_UP = CONFIG["COLOR_SPIN_UP"]
+# COLOR_SPIN_DOWN = CONFIG["COLOR_SPIN_DOWN"]

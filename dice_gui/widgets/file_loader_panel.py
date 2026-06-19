@@ -1,64 +1,50 @@
-# dice_gui/widgets/file_loader_panel.py
-
 from PyQt6.QtCore import pyqtSignal
-from PyQt6.QtWidgets import QFileDialog, QMessageBox, QPushButton, QVBoxLayout, QWidget
-
-from dice_gui.domain import SimulationData
-from dice_gui.parsers import ParseError, TimeSpinXParser
+from PyQt6.QtWidgets import QFileDialog, QPushButton, QVBoxLayout, QWidget
 
 
 class FileLoaderPanel(QWidget):
-    data_loaded = pyqtSignal(object)  # emits SimulationData
+    """
+    Panel for selecting the primary simulation data file.
 
-    def __init__(self):
-        super().__init__()
+    This widget is intentionally narrow in scope. It does not parse files and
+    does not know about parser registries. MainWindow decides which file filter
+    to use and what parser should handle the selected file.
+    """
 
-        self.read_button = QPushButton("Read .dat File", self)
-        # By default, use TimeSpinXParser to parse the file
-        # TODO: Add support for other parsers
-        self.parser = TimeSpinXParser()
+    file_selected = pyqtSignal(str)
 
-        self.setupUI()
+    def __init__(self, parent=None):
+        super().__init__(parent)
 
-    def setupUI(self):
-        layout = QVBoxLayout()
-        self.read_button.clicked.connect(self.choose_model_file)
-        layout.addWidget(self.read_button)
+        self._dialog_title = "Select Simulation Data File"
+        self._file_filter = "All Files (*)"
+
+        self.open_button = QPushButton("Open Simulation File", self)
+
+        self._setup_ui()
+
+    def _setup_ui(self):
+        layout = QVBoxLayout(self)
+        layout.addWidget(self.open_button)
         self.setLayout(layout)
 
-    def choose_model_file(self):
-        file_path, _ = QFileDialog.getOpenFileName(
+        self.open_button.clicked.connect(self.choose_file)
+
+    def set_file_filter(self, file_filter: str):
+        self._file_filter = file_filter or "All Files (*)"
+
+    def set_dialog_title(self, dialog_title: str):
+        self._dialog_title = dialog_title or "Select Simulation Data File"
+
+    def choose_file(self):
+        file_path, _selected_filter = QFileDialog.getOpenFileName(
             self,
-            "Select Data File",
+            self._dialog_title,
             "",
-            "Text Files (*.dat *.txt);;All Files (*)",
+            self._file_filter,
         )
 
         if not file_path:
             return
 
-        try:
-            data = self.parser.parse_file(file_path)
-        except FileNotFoundError:
-            QMessageBox.critical(
-                self,
-                "File Not Found",
-                f"Could not find file:\n{file_path}",
-            )
-            return
-        except ParseError as exc:
-            QMessageBox.critical(
-                self,
-                "Parse Error",
-                str(exc),
-            )
-            return
-        except Exception as exc:
-            QMessageBox.critical(
-                self,
-                "Unexpected Error",
-                f"An unexpected error occurred:\n{exc}",
-            )
-            return
-
-        self.data_loaded.emit(data)
+        self.file_selected.emit(file_path)

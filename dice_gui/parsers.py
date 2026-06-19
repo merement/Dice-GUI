@@ -13,7 +13,7 @@ from pathlib import Path
 
 import numpy as np
 
-from dice_gui.domain import SimulationData
+from dice_gui.domain import LoadedSimulation, TimeSeriesData
 
 
 class ParseError(Exception):
@@ -31,9 +31,11 @@ class TimeSpinXParser:
         0.011 1 0.305 1 -0.357 -1 0.800
     """
 
-    name = "time spin-x pairs"
+    id = "raw"
+    name = "Raw time/spin/x data"
+    file_dialog_filter = "Raw data (*.dat *.txt)"
 
-    def parse_file(self, file_path: str | Path) -> SimulationData:
+    def parse_file(self, file_path: str | Path) -> LoadedSimulation:
         file_path = Path(file_path)
 
         times: list[float] = []
@@ -123,8 +125,19 @@ class TimeSpinXParser:
         if not times:
             raise ParseError(f"File {file_path} contains no data.")
 
-        return SimulationData(
-            times=np.array(times, dtype=float),
-            spins=np.array(all_spins, dtype=np.int8),
-            x_values=np.array(all_x_values, dtype=float),
+        return LoadedSimulation(
+            dynamic_data=TimeSeriesData(
+                times=np.array(times, dtype=float),
+                spins=np.array(all_spins, dtype=np.int8),
+                x_values=np.array(all_x_values, dtype=float),
+            ),
         )
+
+
+# class AggregatedSimulationParser:
+#     id = "aggregated"
+#     name = "Aggregated simulation file"
+#     file_filter = "Aggregated simulation files (*.json *.yaml *.sim)"
+
+#     def parse_file(self, file_path: str | Path) -> LoadedSimulation:
+#         pass

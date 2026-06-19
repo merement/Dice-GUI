@@ -1,10 +1,10 @@
-# app/circle_view.py
+# dice_gui/widgets/circle_view.py
 
 import math
 
 from PyQt6.QtCore import QPointF, Qt
 from PyQt6.QtGui import QBrush, QColor, QPainter, QPen
-from PyQt6.QtWidgets import QHBoxLayout, QWidget
+from PyQt6.QtWidgets import QWidget
 
 from dice_gui.domain import DynamicFrame
 
@@ -12,6 +12,9 @@ COLOR_CIRCLE = QColor(125, 125, 125)
 COLOR_SPIN_UP = QColor(255, 0, 0)
 COLOR_SPIN_DOWN = QColor(0, 0, 255)
 COLOR_SPIN_NONE = QColor(100, 100, 100)
+
+NODE_RADIUS = 7.5
+NODE_HIT_RADIUS = 12.0
 
 
 class CircleView(QWidget):
@@ -22,13 +25,9 @@ class CircleView(QWidget):
         self.circle_center = QPointF(0, 0)
         self.circle_radius = 0.0
         self.frame: DynamicFrame | None = None
+        self.selected_index: int | None = None
 
-        self.CircleUI()
-
-    def CircleUI(self):
-        main_layout = QHBoxLayout(self)
-        main_layout.addStretch()
-        self.setLayout(main_layout)
+        self.reserved_left_space = 150
 
     def set_frame(self, frame: DynamicFrame):
         self.frame = frame
@@ -55,7 +54,7 @@ class CircleView(QWidget):
         painter.setPen(pen)
         painter.setBrush(Qt.BrushStyle.NoBrush)
 
-        width = self.width() - 150
+        width = self.width() - self.reserved_left_space
         height = self.height()
 
         self.circle_radius = max(float(min(width, height) / 2.25), 155.0)
@@ -104,11 +103,11 @@ class CircleView(QWidget):
 
         node_pos = self._x_to_screen_position(x_value)
 
-        node_radius = 7.5
+        # node_radius = 7.5
 
         painter.setBrush(QBrush(color))
         painter.setPen(QPen(color))
-        painter.drawEllipse(node_pos, node_radius, node_radius)
+        painter.drawEllipse(node_pos, NODE_RADIUS, NODE_RADIUS)
 
     def _x_to_screen_position(self, x_value: float) -> QPointF:
         """

@@ -44,6 +44,7 @@ class MainWindow(QMainWindow):
             initial_parser_id = parser_registry._default_parser_id
 
         self.loaded_simulation = None
+        self.selected_point_index: int | None = None
 
         self.timer = QTimer(self)
         self.timer.timeout.connect(self.progress)
@@ -148,6 +149,8 @@ class MainWindow(QMainWindow):
         self.regress_button.clicked.connect(self.regress)
         self.play_pause_button.clicked.connect(self.toggle_play_pause)
 
+        self.circle_view.selection_changed.connect(self.on_point_selection_changed)
+
     def _populate_parser_combo_box(self):
         self.parser_combo_box.clear()
         for parser in self.parser_registry.parsers():
@@ -201,6 +204,9 @@ class MainWindow(QMainWindow):
 
     def on_simulation_loaded(self, loaded_simulation):
         self.loaded_simulation = loaded_simulation
+        self.selected_point_index = None
+        self.circle_view.clear_selection()
+
         self.timer.stop()
         self.play_pause_button.setText("Play")
         self.setup_time_slider()
@@ -244,6 +250,7 @@ class MainWindow(QMainWindow):
         frame = data.frame(time_index)
         self.time_label.setText(f"{frame.time_value:.3f}")
         self.circle_view.set_frame(frame)
+        self._update_point_info_label()
 
     def progress(self):
         if self.time_slider.value() < self.time_slider.maximum():
@@ -263,6 +270,56 @@ class MainWindow(QMainWindow):
         else:
             self.play_pause_button.setText("Play")
             self.timer.stop()
+
+    def on_point_selection_changed(self, selected_index: int | None):
+        """
+        Receive selection updates from CircleView.
+
+        MainWindow owns the app-level selected point index because future
+        widgets, such as PointInfoPanel, will also need this state.
+        """
+        self.selected_point_index = selected_index
+        self._update_point_info_label()
+
+        if selected_index is None:
+            self.status_bar.showMessage("Point selection cleared")
+        else:
+            self.status_bar.showMessage(f"Selected point {selected_index}")
+
+    def _update_point_info_label(self):
+        """
+        Placeholder for a proper point info display.
+
+        This can later be replaced by a dedicated PointInfoPanel widget.
+        """
+        data = self.simulation_data
+        if data is None:
+            self.point_info_label.setText("No simulation loaded")
+            return
+
+        selected_index = self.selected_point_index
+        if selected_index is None:
+            self.point_info_label.setText("No point selected")
+            return
+
+        time_index = self.time_slider.value()
+        frame = data.frame(time_index)
+
+        if selected_index < 0 or selected_index >= len(frame.x_values):
+            self.point_info_label.setText("Invalid point index")
+            return
+
+        spin = int(frame.spins[selected_index])
+        x_value = float(frame.x_values[selected_index])
+
+        # TODO: logic for evaluating Delta_X
+
+        self.point_info_label.setText(
+            f"Time: {frame.time_value:.3f}\n"
+            f"Point index: {selected_index}\n"
+            f"Spin: {spin}\n"
+            f"X: {x_value:.6f}"
+        )
 
     def selected_parser_id(self) -> str | None:
         if self.parser_combo_box.count() == 0:

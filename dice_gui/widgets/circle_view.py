@@ -2,8 +2,8 @@
 
 import math
 
-from PyQt6.QtCore import QPointF, Qt
-from PyQt6.QtGui import QBrush, QColor, QPainter, QPen
+from PyQt6.QtCore import QPointF, Qt, pyqtSignal
+from PyQt6.QtGui import QBrush, QColor, QMouseEvent, QPainter, QPen
 from PyQt6.QtWidgets import QWidget
 
 from dice_gui.domain import DynamicFrame
@@ -13,11 +13,34 @@ COLOR_SPIN_UP = QColor(255, 0, 0)
 COLOR_SPIN_DOWN = QColor(0, 0, 255)
 COLOR_SPIN_NONE = QColor(100, 100, 100)
 
+COLOR_SELECTED_OUTLINE = QColor(255, 215, 0)
+COLOR_SELECTED_INNER = QColor(0, 0, 0)
+
 NODE_RADIUS = 7.5
 NODE_HIT_RADIUS = 12.0
+SELECTED_NODE_RADIUS = NODE_RADIUS + 4.0
 
 
 class CircleView(QWidget):
+    """
+    View widget for rendering one DynamicFrame on a circle.
+
+    CircleView intentionally does not own SimulationData. It only owns:
+      - the current frame being displayed
+      - lightweight view state, such as selected_index
+
+    The app-level selected point index should be mirrored/owned by MainWindow.
+    """
+
+    selection_changed = pyqtSignal(object)
+    """
+    Emitted when the selected point changes.
+
+    Payload:
+        int   -> selected point index
+        None  -> no point selected
+    """
+
     def __init__(self, parent=None):
         super().__init__(parent)
         self.setMinimumHeight(500)
@@ -102,8 +125,6 @@ class CircleView(QWidget):
             color = COLOR_SPIN_NONE
 
         node_pos = self._x_to_screen_position(x_value)
-
-        # node_radius = 7.5
 
         painter.setBrush(QBrush(color))
         painter.setPen(QPen(color))

@@ -170,7 +170,7 @@ python -m dice_gui.main path/to/data.dat
 
 ## Testing
 
-Tests are not yet fully established, but parser tests are a natural first target.
+Tests are not established, but parser tests are a natural first target.
 
 Example future command:
 
@@ -211,7 +211,7 @@ Long-term:
 
 ## Acknowledgments
 
-This project builds on the proof-of-concept work from:
+This project builds on the proof-of-concept work from
 
 - [dice-stack-GUI](https://github.com/gtsanyal/dice-stack-GUI)
 

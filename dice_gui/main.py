@@ -9,7 +9,7 @@ import sys
 
 from PyQt6.QtWidgets import QApplication
 
-from dice_gui import parsers
+# from dice_gui import parsers
 from dice_gui.loading import create_default_parser_registry
 from dice_gui.widgets.main_window import MainWindow
 

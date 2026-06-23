@@ -99,7 +99,7 @@ class CircleView(QWidget):
         """
         self.set_selected_index(None)
 
-    def paintEvent(self, event):
+    def paintEvent(self, event):  # pyright: ignore[reportIncompatibleMethodOverride]
         painter = QPainter(self)
 
         if not painter.isActive():
@@ -115,11 +115,11 @@ class CircleView(QWidget):
 
         painter.end()
 
-    def resizeEvent(self, event):
+    def resizeEvent(self, event):  # pyright: ignore[reportIncompatibleMethodOverride]
         super().resizeEvent(event)
         self._update_circle_geometry()
 
-    def mousePressEvent(self, event: QMouseEvent):
+    def mousePressEvent(self, event: QMouseEvent):  # pyright: ignore[reportIncompatibleMethodOverride]
         if event.button() != Qt.MouseButton.LeftButton:
             super().mousePressEvent(event)
             return
@@ -164,15 +164,6 @@ class CircleView(QWidget):
         pen.setWidth(2)
         painter.setPen(pen)
         painter.setBrush(Qt.BrushStyle.NoBrush)
-
-        # width = self.width() - self.reserved_left_space
-        # height = self.height()
-
-        # self.circle_radius = max(float(min(width, height) / 2.25), 155.0)
-        # self.circle_center = QPointF(
-        #     self.rect().center().x(),
-        #     self.rect().center().y(),
-        # )
 
         painter.drawEllipse(
             self.circle_center,

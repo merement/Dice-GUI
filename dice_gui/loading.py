@@ -22,6 +22,7 @@ class UnknownParserError(Exception):
 class ParserRegistry:
     def __init__(self):
         self._parsers = {}
+        self._default_parser_id = None
 
     def register(self, parser, *, default: bool = False):
         parser_id = parser.id

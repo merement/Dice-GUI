@@ -32,9 +32,10 @@ class TimeSeriesData:
         return self.spins.shape[1]
 
     def frame(self, time_index: int) -> DynamicFrame:
-        # TODO:
-        # if not 0 <= time_index < self.num_frames:
-        #     raise IndexError(...)
+        if not 0 <= time_index < self.num_frames:
+            raise IndexError(
+                f"time_index {time_index} out of range for {self.num_frames} frames."
+            )
 
         return DynamicFrame(
             time_index=time_index,

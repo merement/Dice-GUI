@@ -124,7 +124,7 @@ class CircleView(QWidget):
             super().mousePressEvent(event)
             return
 
-        if self.frame is None or self._num_nodes == 0:
+        if self.frame is None or self._num_nodes() == 0:
             self.clear_selection()
             event.accept()
             return

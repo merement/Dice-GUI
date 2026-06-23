@@ -73,15 +73,11 @@ Planned or desired functionality includes:
 - [x] Time slider for moving through frames.
 - [x] Play/pause animation.
 - [x] Circular visualization of dynamic variables.
-- [ ] Parser abstraction for multiple file formats.
+- [x] Parser abstraction for multiple file formats (registry & load service).
 - [ ] Parser plugin support.
-- [ ] Point selection by mouse.
+- [x] Point selection by mouse.
 - [ ] Point selection by index.
-- [ ] Display of selected point state:
-  - time,
-  - point index,
-  - spin value,
-  - `X` coordinate.
+- [x] Display of selected point state (time, index, spin, X coordinate).
 - [ ] Zooming into a region of the circle.
 - [ ] Hiding selected points.
 - [ ] Showing only selected points.
@@ -189,25 +185,30 @@ Potential test areas:
 
 ## Roadmap
 
-Short-term:
+Phase 0: Preparatory Phase (Completed)
+- File-based loading, circular rendering, time slider, play/pause stepping.
+- Registry-based parser loading.
+- Mouse-based point selection.
 
-1. Add basic parser validation and user-facing error messages.
+Phase 1: Robustness & Verification (Completed)
+- Packaging and dependencies setup (`pyproject.toml`).
+- Domain validation boundary checks.
+- Comprehensive unit testing suite (`test_domain`, `test_parsers`, `test_loading`).
+- UI component modularization (custom `PointInfoPanel` widget).
+- Visual warning dialogs for file load failures (`QMessageBox`).
 
-Medium-term:
+Phase 2: Medium-Term Features (Feature Expansion)
+1. Point selection by index.
+2. Zooming and filtering (hiding/showing selected points).
+3. Historical selected point plotting (using `pyqtgraph` or `matplotlib`).
+4. Support for multiple text-based/structured data formats (JSON/YAML).
 
-1. Add point selection.
-2. Add point information panel.
-3. Add zooming/filtering.
-4. Add selected-point plotting.
-5. Add support for multiple text-based data formats.
-
-Long-term:
-
-1. Add plugin infrastructure.
-2. Add static graph/simulation metadata.
-3. Add backend streaming support.
-4. Add communication with simulation backends.
-5. Integrate with or support workflows based on the Julia `Dice` library.
+Phase 3: Long-Term Integration
+1. Plugin infrastructure for external parsers.
+2. Support for static graph topologies and simulation parameter metadata.
+3. Backend live streaming mode (WebSockets/IPC).
+4. Simulation feedback and control signaling.
+5. Integration with workflow patterns in the Julia `Dice` library.
 
 ## Acknowledgments
 

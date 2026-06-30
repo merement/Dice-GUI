@@ -46,6 +46,7 @@ class MainWindow(QMainWindow):
 
         self.loaded_simulation = None
         self.selected_point_index: int | None = None
+        self.point_ids: list[str] = []
 
         self.timer = QTimer(self)
         self.timer.timeout.connect(self.progress)
@@ -118,7 +119,6 @@ class MainWindow(QMainWindow):
         right_sidebar_layout.setContentsMargins(0, 0, 0, 0)
 
         right_sidebar_layout.addWidget(self.point_info_panel)
-        right_sidebar_layout.addStretch(1)
 
         content_splitter.addWidget(self.circle_view)
         content_splitter.addWidget(right_sidebar)
@@ -147,6 +147,12 @@ class MainWindow(QMainWindow):
         self.play_pause_button.clicked.connect(self.toggle_play_pause)
 
         self.circle_view.selection_changed.connect(self.on_point_selection_changed)
+        self.point_info_panel.point_selected.connect(
+            self.on_point_selection_changed_from_table
+        )
+        self.point_info_panel.point_id_changed.connect(
+            self.on_point_id_changed
+        )
 
     def _populate_parser_combo_box(self):
         self.parser_combo_box.clear()
@@ -207,6 +213,18 @@ class MainWindow(QMainWindow):
         self.loaded_simulation = loaded_simulation
         self.selected_point_index = None
         self.circle_view.clear_selection()
+
+        # Initialize point IDs from static_data metadata or default to empty strings
+        num_nodes = loaded_simulation.dynamic_data.num_nodes
+        self.point_ids = [""] * num_nodes
+        if (loaded_simulation.static_data is not None and 
+                loaded_simulation.static_data.metadata is not None and 
+                "node_ids" in loaded_simulation.static_data.metadata):
+            loaded_ids = loaded_simulation.static_data.metadata["node_ids"]
+            for i, p_id in enumerate(loaded_ids):
+                if i < num_nodes:
+                    self.point_ids[i] = str(p_id)
+
         self.point_info_panel.clear_info("No point selected")
 
         self.timer.stop()
@@ -297,11 +315,6 @@ class MainWindow(QMainWindow):
             self.point_info_panel.clear_info("No simulation loaded")
             return
 
-        selected_index = self.selected_point_index
-        if selected_index is None:
-            self.point_info_panel.clear_info("No point selected")
-            return
-
         time_index = self.time_slider.value()
         try:
             frame = data.frame(time_index)
@@ -309,21 +322,32 @@ class MainWindow(QMainWindow):
             self.point_info_panel.clear_info("Invalid frame index")
             return
 
-        if selected_index < 0 or selected_index >= len(frame.x_values):
-            self.point_info_panel.clear_info("Invalid point index")
-            return
-
-        spin = int(frame.spins[selected_index])
-        x_value = float(frame.x_values[selected_index])
-
-        # TODO: Logic for evaluating Delta X needs to be implemented
-
-        self.point_info_panel.update_info(
-            time_value=frame.time_value,
-            index=selected_index,
-            spin=spin,
-            x_value=x_value,
+        self.point_info_panel.update_points(
+            spins=frame.spins,
+            x_values=frame.x_values,
+            selected_index=self.selected_point_index,
+            point_ids=self.point_ids,
         )
+
+    def on_point_selection_changed_from_table(self, selected_index: int | None):
+        if self.selected_point_index == selected_index:
+            return
+        self.selected_point_index = selected_index
+
+        self.circle_view.blockSignals(True)
+        self.circle_view.set_selected_index(selected_index)
+        self.circle_view.blockSignals(False)
+
+        self._update_point_info_label()
+
+        if selected_index is None:
+            self.status_bar.showMessage("Point selection cleared")
+        else:
+            self.status_bar.showMessage(f"Selected point {selected_index}")
+
+    def on_point_id_changed(self, node_index: int, new_id: str):
+        if 0 <= node_index < len(self.point_ids):
+            self.point_ids[node_index] = new_id
 
     def selected_parser_id(self) -> str | None:
         if self.parser_combo_box.count() == 0:

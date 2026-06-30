@@ -13,7 +13,12 @@ from pathlib import Path
 
 import numpy as np
 
-from dice_gui.domain import LoadedSimulation, TimeSeriesData
+from dice_gui.domain import (
+    LoadedSimulation,
+    TimeSeriesData,
+    StaticSimulationData,
+    SimulationGraph,
+)
 
 
 class ParseError(Exception):
@@ -43,7 +48,6 @@ class TimeSpinXParser:
         all_x_values: list[list[float]] = []
 
         expected_num_nodes: int | None = None
-
         with file_path.open("r", encoding="utf-8") as file:
             for line_number, line in enumerate(file, start=1):
                 stripped = line.strip()

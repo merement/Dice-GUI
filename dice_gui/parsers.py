@@ -35,7 +35,7 @@ class TimeSpinXParser:
     name = "Raw time/spin/x data"
     file_dialog_filter = "Raw data (*.dat *.txt)"
 
-    def parse_file(self, file_path: str | Path) -> LoadedSimulation:
+    def parse_raw_file(self, file_path: str | Path) -> LoadedSimulation:
         file_path = Path(file_path)
 
         times: list[float] = []
@@ -48,7 +48,7 @@ class TimeSpinXParser:
             for line_number, line in enumerate(file, start=1):
                 stripped = line.strip()
 
-                if not stripped:
+                if not stripped or stripped.startswith("#"):
                     continue
 
                 values = stripped.split()

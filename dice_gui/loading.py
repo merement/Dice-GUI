@@ -84,7 +84,10 @@ class FileLoadService:
         parser = self.parser_registry.get(parser_id)
 
         try:
-            loaded = parser.parse_file(file_path)
+            if hasattr(parser, "parse_raw_file"):
+                loaded = parser.parse_raw_file(file_path)
+            else:
+                loaded = parser.parse_file(file_path)
         except ParseError:
             raise
         except FileNotFoundError:

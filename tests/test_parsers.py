@@ -14,7 +14,7 @@ def test_parse_valid_data(tmp_path: Path):
     file_path.write_text(content, encoding="utf-8")
     
     parser = TimeSpinXParser()
-    loaded = parser.parse_file(file_path)
+    loaded = parser.parse_raw_file(file_path)
     
     assert isinstance(loaded, LoadedSimulation)
     data = loaded.dynamic_data
@@ -38,7 +38,7 @@ def test_parse_too_few_values(tmp_path: Path):
     
     parser = TimeSpinXParser()
     with pytest.raises(ParseError, match="Line 1: expected at least one time value and one spin/x pair."):
-        parser.parse_file(file_path)
+        parser.parse_raw_file(file_path)
 
 
 def test_parse_invalid_time(tmp_path: Path):
@@ -48,7 +48,7 @@ def test_parse_invalid_time(tmp_path: Path):
     
     parser = TimeSpinXParser()
     with pytest.raises(ParseError, match="Line 1: invalid time value 'abc'."):
-        parser.parse_file(file_path)
+        parser.parse_raw_file(file_path)
 
 
 def test_parse_uneven_spin_x_columns(tmp_path: Path):
@@ -58,7 +58,7 @@ def test_parse_uneven_spin_x_columns(tmp_path: Path):
     
     parser = TimeSpinXParser()
     with pytest.raises(ParseError, match="Line 1: expected an even number of spin/x values after the time column, got 3."):
-        parser.parse_file(file_path)
+        parser.parse_raw_file(file_path)
 
 
 def test_parse_mismatched_node_counts(tmp_path: Path):
@@ -71,7 +71,7 @@ def test_parse_mismatched_node_counts(tmp_path: Path):
     
     parser = TimeSpinXParser()
     with pytest.raises(ParseError, match="Line 2: expected 1 nodes, got 2."):
-        parser.parse_file(file_path)
+        parser.parse_raw_file(file_path)
 
 
 def test_parse_invalid_spin_value(tmp_path: Path):
@@ -81,7 +81,7 @@ def test_parse_invalid_spin_value(tmp_path: Path):
     
     parser = TimeSpinXParser()
     with pytest.raises(ParseError, match="Line 1: invalid spin value 'abc'."):
-        parser.parse_file(file_path)
+        parser.parse_raw_file(file_path)
 
 
 def test_parse_out_of_bounds_spin(tmp_path: Path):
@@ -91,7 +91,7 @@ def test_parse_out_of_bounds_spin(tmp_path: Path):
     
     parser = TimeSpinXParser()
     with pytest.raises(ParseError, match="Line 1: spin must be -1 or 1, got 0."):
-        parser.parse_file(file_path)
+        parser.parse_raw_file(file_path)
 
 
 def test_parse_invalid_x_value(tmp_path: Path):
@@ -101,7 +101,7 @@ def test_parse_invalid_x_value(tmp_path: Path):
     
     parser = TimeSpinXParser()
     with pytest.raises(ParseError, match="Line 1: invalid x value 'abc'."):
-        parser.parse_file(file_path)
+        parser.parse_raw_file(file_path)
 
 
 def test_parse_out_of_bounds_x(tmp_path: Path):
@@ -111,7 +111,7 @@ def test_parse_out_of_bounds_x(tmp_path: Path):
     
     parser = TimeSpinXParser()
     with pytest.raises(ParseError, match="Line 1: x must be in \\[-1, 1\\], got 1.05."):
-        parser.parse_file(file_path)
+        parser.parse_raw_file(file_path)
 
 
 def test_parse_empty_file(tmp_path: Path):
@@ -120,4 +120,28 @@ def test_parse_empty_file(tmp_path: Path):
     
     parser = TimeSpinXParser()
     with pytest.raises(ParseError, match="contains no data."):
-        parser.parse_file(file_path)
+        parser.parse_raw_file(file_path)
+
+
+def test_parse_comments(tmp_path: Path):
+    file_path = tmp_path / "comments.dat"
+    content = (
+        "# This is a comment\n"
+        "0.000 1 0.011 -1 -0.357\n"
+        "# Another comment\n"
+        "0.010 -1 0.015 1 0.301\n"
+        "  # Comment with leading whitespace\n"
+        "0.020 1 0.020 -1 0.299\n"
+    )
+    file_path.write_text(content, encoding="utf-8")
+    
+    parser = TimeSpinXParser()
+    loaded = parser.parse_raw_file(file_path)
+    
+    assert isinstance(loaded, LoadedSimulation)
+    data = loaded.dynamic_data
+    assert data.num_frames == 3
+    assert data.num_nodes == 2
+    
+    assert list(data.times) == [0.0, 0.010, 0.020]
+

@@ -49,7 +49,7 @@ class CircleView(QWidget):
         self.circle_radius = 0.0
 
         self.frame: DynamicFrame | None = None
-        self.selected_index: int | None = None
+        self.selected_indices: set[int] = set()
 
         self.node_radius = NODE_RADIUS
         self.node_hit_radius = NODE_HIT_RADIUS
@@ -63,41 +63,50 @@ class CircleView(QWidget):
         """
         Set the frame currently displayed by this view.
 
-        Selection is preserved if the selected index is still valid for the new
-        frame. If not, selection is cleared and selection_changed is emitted.
+        Selection is preserved for valid indices. Invalid indices are filtered out.
         """
         self.frame = frame
 
         if not self._selected_index_is_valid():
-            self.set_selected_index(None)
+            valid_indices = {idx for idx in self.selected_indices if 0 <= idx < self._num_nodes()}
+            self.set_selected_indices(valid_indices)
 
+        self.update()
+
+    def set_selected_indices(self, indices: set[int] | list[int] | None):
+        """
+        Set the selected node indices.
+        """
+        if indices is None:
+            new_indices = set()
+        else:
+            new_indices = set()
+            for idx in indices:
+                idx = int(idx)
+                if self.frame is not None and 0 <= idx < self._num_nodes():
+                    new_indices.add(idx)
+
+        if self.selected_indices == new_indices:
+            return
+
+        self.selected_indices = new_indices
+        self.selection_changed.emit(self.selected_indices)
         self.update()
 
     def set_selected_index(self, index: int | None):
         """
-        Set the selected node index.
-
-        This method is the central place for changing selection state inside
-        CircleView, so signal emission and repainting stay consistent.
+        Set a single selected node index. Provided for backward compatibility.
         """
-        if index is not None:
-            index = int(index)
-
-            if self.frame is None or index < 0 or index >= self._num_nodes():
-                index = None
-
-        if self.selected_index == index:
-            return
-
-        self.selected_index = index
-        self.selection_changed.emit(self.selected_index)
-        self.update()
+        if index is None:
+            self.set_selected_indices(set())
+        else:
+            self.set_selected_indices({index})
 
     def clear_selection(self):
         """
-        Clear the selected node index.
+        Clear the selected node indices.
         """
-        self.set_selected_index(None)
+        self.set_selected_indices(set())
 
     def paintEvent(self, event):  # pyright: ignore[reportIncompatibleMethodOverride]
         painter = QPainter(self)
@@ -129,12 +138,25 @@ class CircleView(QWidget):
             event.accept()
             return
 
+        modifiers = event.modifiers()
+        has_shift = bool(modifiers & Qt.KeyboardModifier.ShiftModifier)
+
         clicked_pos = event.position()
         nearest_index, nearest_distance = self._nearest_node(clicked_pos)
         if nearest_distance is not None and nearest_distance <= self.node_hit_radius:
-            self.set_selected_index(nearest_index)
+            assert nearest_index is not None
+            if has_shift:
+                new_indices = set(self.selected_indices)
+                if nearest_index in new_indices:
+                    new_indices.remove(nearest_index)
+                else:
+                    new_indices.add(nearest_index)
+                self.set_selected_indices(new_indices)
+            else:
+                self.set_selected_indices({nearest_index})
         else:
-            self.clear_selection()
+            if not has_shift:
+                self.clear_selection()
         event.accept()
 
     def _calculate_circle_geometry(self):
@@ -193,7 +215,7 @@ class CircleView(QWidget):
 
     def _draw_frame(self, painter: QPainter, frame: DynamicFrame):
         for index, (spin, x_value) in enumerate(zip(frame.spins, frame.x_values)):
-            is_selected = index == self.selected_index
+            is_selected = index in self.selected_indices
             self._draw_node(
                 painter=painter,
                 spin=int(spin),
@@ -310,10 +332,7 @@ class CircleView(QWidget):
         return len(self.frame.x_values)
 
     def _selected_index_is_valid(self) -> bool:
-        if self.selected_index is None:
-            return True
-
         if self.frame is None:
-            return False
+            return not self.selected_indices
 
-        return 0 <= self.selected_index < self._num_nodes()
+        return all(0 <= idx < self._num_nodes() for idx in self.selected_indices)

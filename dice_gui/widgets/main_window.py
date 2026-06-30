@@ -45,7 +45,7 @@ class MainWindow(QMainWindow):
         initial_parser_id = parser_registry.default_parser_id
 
         self.loaded_simulation = None
-        self.selected_point_index: int | None = None
+        self.selected_point_indices: set[int] = set()
         self.point_ids: list[str] = []
 
         self.timer = QTimer(self)
@@ -211,7 +211,7 @@ class MainWindow(QMainWindow):
 
     def on_simulation_loaded(self, loaded_simulation):
         self.loaded_simulation = loaded_simulation
-        self.selected_point_index = None
+        self.selected_point_indices = set()
         self.circle_view.clear_selection()
 
         # Initialize point IDs from static_data metadata or default to empty strings
@@ -291,20 +291,30 @@ class MainWindow(QMainWindow):
             self.play_pause_button.setText("Play")
             self.timer.stop()
 
-    def on_point_selection_changed(self, selected_index: int | None):
+    def on_point_selection_changed(self, selected_indices: set[int] | list[int] | None):
         """
         Receive selection updates from CircleView.
 
-        MainWindow owns the app-level selected point index because future
+        MainWindow owns the app-level selected point indices because future
         widgets, such as PointInfoPanel, will also need this state.
         """
-        self.selected_point_index = selected_index
+        if selected_indices is None:
+            new_indices = set()
+        else:
+            new_indices = set(selected_indices)
+
+        if self.selected_point_indices == new_indices:
+            return
+
+        self.selected_point_indices = new_indices
         self._update_point_info_label()
 
-        if selected_index is None:
+        if not new_indices:
             self.status_bar.showMessage("Point selection cleared")
+        elif len(new_indices) == 1:
+            self.status_bar.showMessage(f"Selected point {next(iter(new_indices))}")
         else:
-            self.status_bar.showMessage(f"Selected point {selected_index}")
+            self.status_bar.showMessage(f"Selected {len(new_indices)} points")
 
     def _update_point_info_label(self):
         """
@@ -325,25 +335,32 @@ class MainWindow(QMainWindow):
         self.point_info_panel.update_points(
             spins=frame.spins,
             x_values=frame.x_values,
-            selected_index=self.selected_point_index,
+            selected_indices=self.selected_point_indices,
             point_ids=self.point_ids,
         )
 
-    def on_point_selection_changed_from_table(self, selected_index: int | None):
-        if self.selected_point_index == selected_index:
+    def on_point_selection_changed_from_table(self, selected_indices: set[int] | list[int] | None):
+        if selected_indices is None:
+            new_indices = set()
+        else:
+            new_indices = set(selected_indices)
+
+        if self.selected_point_indices == new_indices:
             return
-        self.selected_point_index = selected_index
+        self.selected_point_indices = new_indices
 
         self.circle_view.blockSignals(True)
-        self.circle_view.set_selected_index(selected_index)
+        self.circle_view.set_selected_indices(new_indices)
         self.circle_view.blockSignals(False)
 
         self._update_point_info_label()
 
-        if selected_index is None:
+        if not new_indices:
             self.status_bar.showMessage("Point selection cleared")
+        elif len(new_indices) == 1:
+            self.status_bar.showMessage(f"Selected point {next(iter(new_indices))}")
         else:
-            self.status_bar.showMessage(f"Selected point {selected_index}")
+            self.status_bar.showMessage(f"Selected {len(new_indices)} points")
 
     def on_point_id_changed(self, node_index: int, new_id: str):
         if 0 <= node_index < len(self.point_ids):

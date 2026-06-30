@@ -27,7 +27,7 @@ def test_point_info_panel_update_points(qapp):
     x_values = [0.1, -0.2]
     point_ids = ["A", "B"]
 
-    panel.update_points(spins, x_values, selected_index=1, point_ids=point_ids)
+    panel.update_points(spins, x_values, selected_indices={1}, point_ids=point_ids)
 
     # We should have 2 rows
     assert panel.table.rowCount() == 2
@@ -56,7 +56,7 @@ def test_point_info_panel_filter(qapp):
     x_values = [0.1, -0.2]
     point_ids = ["A", "B"]
 
-    panel.update_points(spins, x_values, selected_index=1, point_ids=point_ids)
+    panel.update_points(spins, x_values, selected_indices={1}, point_ids=point_ids)
 
     # Check "Show selected"
     panel.show_selected_radio.setChecked(True)
@@ -66,3 +66,24 @@ def test_point_info_panel_filter(qapp):
     # Check "Show all" again
     panel.show_all_radio.setChecked(True)
     assert panel.table.rowCount() == 2
+
+
+def test_point_info_panel_multi_selection(qapp):
+    panel = PointInfoPanel()
+    spins = [1, -1, 1]
+    x_values = [0.1, -0.2, 0.3]
+    point_ids = ["A", "B", "C"]
+
+    # Select nodes 0 and 2
+    panel.update_points(spins, x_values, selected_indices={0, 2}, point_ids=point_ids)
+
+    # Check that rows 0 and 2 are selected
+    assert panel.table.item(0, 0).isSelected()
+    assert not panel.table.item(1, 0).isSelected()
+    assert panel.table.item(2, 0).isSelected()
+
+    # In "Show selected" mode, only 0 and 2 should be shown
+    panel.show_selected_radio.setChecked(True)
+    assert panel.table.rowCount() == 2
+    assert panel.table.item(0, 0).text() == "0"
+    assert panel.table.item(1, 0).text() == "2"

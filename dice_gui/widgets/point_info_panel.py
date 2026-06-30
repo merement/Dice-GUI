@@ -3,6 +3,7 @@ from PyQt6.QtWidgets import (
     QGroupBox,
     QTableWidget,
     QTableWidgetItem,
+    QTableWidgetSelectionRange,
     QAbstractItemView,
     QRadioButton,
     QButtonGroup,
@@ -16,7 +17,7 @@ class PointInfoPanel(QGroupBox):
     """
     Dedicated widget for displaying details of the simulation nodes in a table.
     """
-    point_selected = pyqtSignal(object)  # Emits node_index (int or None)
+    point_selected = pyqtSignal(object)  # Emits set of node_indices
     point_id_changed = pyqtSignal(int, str)  # Emits (node_index, new_id)
 
     def __init__(self, parent=None):
@@ -24,7 +25,7 @@ class PointInfoPanel(QGroupBox):
 
         self._last_spins = None
         self._last_x_values = None
-        self._last_selected_index = None
+        self._last_selected_indices = set()
         self._last_point_ids = []
         self._updating_table = False
 
@@ -56,7 +57,7 @@ class PointInfoPanel(QGroupBox):
 
         # Configure Table properties
         self.table.setSelectionBehavior(QAbstractItemView.SelectionBehavior.SelectRows)
-        self.table.setSelectionMode(QAbstractItemView.SelectionMode.SingleSelection)
+        self.table.setSelectionMode(QAbstractItemView.SelectionMode.ExtendedSelection)
         self.table.horizontalHeader().setSectionResizeMode(QHeaderView.ResizeMode.Stretch)
         self.table.verticalHeader().setVisible(False)
 
@@ -81,17 +82,24 @@ class PointInfoPanel(QGroupBox):
         """
         self._last_spins = None
         self._last_x_values = None
-        self._last_selected_index = None
+        self._last_selected_indices = set()
         self._last_point_ids = []
         self._refresh_table()
 
-    def update_points(self, spins, x_values, selected_index, point_ids):
+    def update_points(self, spins, x_values, selected_indices, point_ids):
         """
         Updates the table with data from the current frame.
         """
         self._last_spins = spins
         self._last_x_values = x_values
-        self._last_selected_index = selected_index
+
+        if selected_indices is None:
+            self._last_selected_indices = set()
+        elif isinstance(selected_indices, (int, float)):
+            self._last_selected_indices = {int(selected_indices)}
+        else:
+            self._last_selected_indices = set(selected_indices)
+
         self._last_point_ids = point_ids
 
         self._refresh_table()
@@ -122,12 +130,10 @@ class PointInfoPanel(QGroupBox):
             x_val = self._last_x_values[i]
             p_id = self._last_point_ids[i] if i < len(self._last_point_ids) else ""
 
-            if show_all or (self._last_selected_index == i):
+            if show_all or (i in self._last_selected_indices):
                 rows_to_show.append((i, spin, x_val, p_id))
 
         self.table.setRowCount(len(rows_to_show))
-
-        highlighted_row = None
 
         for row_idx, (node_idx, spin, x_val, p_id) in enumerate(rows_to_show):
             # Column 0: Number (index)
@@ -161,11 +167,11 @@ class PointInfoPanel(QGroupBox):
             item_delta.setFlags(item_delta.flags() & ~Qt.ItemFlag.ItemIsEditable)
             self.table.setItem(row_idx, 4, item_delta)
 
-            if self._last_selected_index == node_idx:
-                highlighted_row = row_idx
-
-        if highlighted_row is not None:
-            self.table.selectRow(highlighted_row)
+            # Highlight selected row
+            if node_idx in self._last_selected_indices:
+                self.table.setRangeSelected(
+                    QTableWidgetSelectionRange(row_idx, 0, row_idx, 4), True
+                )
 
         self.table.blockSignals(False)
         self._updating_table = False
@@ -186,12 +192,13 @@ class PointInfoPanel(QGroupBox):
             return
 
         selected_ranges = self.table.selectedRanges()
-        if not selected_ranges:
-            self.point_selected.emit(None)
-            return
+        selected_indices = set()
+        for r in selected_ranges:
+            for row in range(r.topRow(), r.bottomRow() + 1):
+                item = self.table.item(row, 0)
+                if item is not None:
+                    node_index = item.data(Qt.ItemDataRole.UserRole)
+                    if node_index is not None:
+                        selected_indices.add(node_index)
 
-        row = selected_ranges[0].topRow()
-        item = self.table.item(row, 0)
-        if item is not None:
-            node_index = item.data(Qt.ItemDataRole.UserRole)
-            self.point_selected.emit(node_index)
+        self.point_selected.emit(selected_indices)

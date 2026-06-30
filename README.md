@@ -43,9 +43,11 @@ For example:
 
 Future visualization options may include arrows or combined color/arrow rendering.
 
-## Current Input Format ("Raw data")
+## Supported Input Formats
 
-The current parser expects a text file where each line corresponds to one time step.
+### Raw data
+
+The parser expects a text file where each line corresponds to one time step.
 
 Each line has the format:
 
@@ -63,7 +65,10 @@ Example:
 
 The first value is the simulation time.
 
-The remaining values are spin/coordinate pairs: `(s_i, x_i)`
+The remaining values are spin/coordinate pairs: `(s_i, x_i)`.
+
+Lines starting with `#` are ignored (can be used for comments or metadata).
+
 
 ## Planned Features
 

@@ -221,7 +221,7 @@ This project builds on the proof-of-concept work from
 
 - [dice-stack-GUI](https://github.com/gtsanyal/dice-stack-GUI)
 
-- The feature displaying labels near selected nodes on the circle was suggested and tested in [logic](https://github.com/YilunUMichChen/logic).
+- Displaying labels near selected nodes on the circle was suggested and tested in [logic](https://github.com/YilunUMichChen/logic).
 
 Related simulation-side development and software references are collected in the Julia library:
 

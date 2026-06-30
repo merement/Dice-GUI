@@ -81,15 +81,16 @@ Planned or desired functionality includes:
 - [x] Parser abstraction for multiple file formats (registry & load service).
 - [ ] Parser plugin support.
 - [x] Point selection by mouse.
-- [ ] Point selection by index.
-- [x] Display of selected point state (time, index, spin, X coordinate).
+- [x] Point selection by index (implemented via interactive point list table).
+- [x] Display of selected point state (time, index, spin, X coordinate, and ID).
 - [ ] Zooming into a region of the circle.
 - [ ] Hiding selected points.
-- [ ] Showing only selected points.
+- [x] Showing only selected points (implemented via "Show selected" table filter).
 - [ ] Plotting selected point histories over time.
 - [ ] Optional static graph/simulation metadata support.
 - [ ] Backend streaming mode.
 - [ ] Backend feedback/control messages.
+
 
 ## Installation
 
@@ -171,22 +172,20 @@ python -m dice_gui.main path/to/data.dat
 
 ## Testing
 
-Tests are not established, but parser tests are a natural first target.
+The project has a comprehensive test suite using `pytest`. The tests cover domain model validation, parser registration, simulation data parsing, and interactive widget behaviors.
 
-Example future command:
+To run all tests, activate the virtual environment and run `pytest`, or execute it directly via the virtual environment's python:
 
 ```bash
-pytest
+.venv/bin/python -m pytest
 ```
 
-Potential test areas:
+### Test Coverage
 
-- parsing valid files,
-- rejecting malformed files,
-- validating spin values,
-- validating `X ∈ [-1, 1]`,
-- validating consistent node counts across time steps,
-- checking `SimulationData.frame()` behavior.
+- **Domain Model**: Boundary checks, coordinate constraints ($X \in [-1, 1]$), spin values ($\sigma \in \{-1, 1\}$), node count consistency, and frame extraction.
+- **Loading Service**: Registry registration, parser lookup, fallback behaviors, and load error scenarios.
+- **Parsers**: Parsing of raw simulation files, comment and whitespace skipping, and error handling for malformed data formats.
+- **Widgets**: UI layout rendering, interactive table updates, custom point ID editing, multi-selection synchronization, and `CircleView` geometry/selection behavior.
 
 ## Roadmap
 

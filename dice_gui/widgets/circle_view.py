@@ -50,6 +50,7 @@ class CircleView(QWidget):
 
         self.frame: DynamicFrame | None = None
         self.selected_indices: set[int] = set()
+        self.point_ids: list[str] = []
 
         self.node_radius = NODE_RADIUS
         self.node_hit_radius = NODE_HIT_RADIUS
@@ -58,6 +59,13 @@ class CircleView(QWidget):
         self.reserved_left_space = 25
 
         self._update_circle_geometry()
+
+    def set_point_ids(self, point_ids: list[str]):
+        """
+        Set the point IDs for the simulation.
+        """
+        self.point_ids = list(point_ids)
+        self.update()
 
     def set_frame(self, frame: DynamicFrame):
         """
@@ -221,6 +229,7 @@ class CircleView(QWidget):
                 spin=int(spin),
                 x_value=float(x_value),
                 selected=is_selected,
+                index=index,
             )
 
     def _draw_node(
@@ -229,6 +238,7 @@ class CircleView(QWidget):
         spin: int,
         x_value: float,
         selected: bool = False,
+        index: int | None = None,
     ):
         if spin == 1:
             color = COLOR_SPIN_UP
@@ -245,6 +255,40 @@ class CircleView(QWidget):
         painter.setBrush(QBrush(color))
         painter.setPen(QPen(color))
         painter.drawEllipse(node_pos, self.node_radius, self.node_radius)
+
+        if selected and index is not None and index < len(self.point_ids):
+            node_id = self.point_ids[index]
+            if node_id:
+                self._draw_node_id(painter, node_pos, node_id)
+
+    def _draw_node_id(self, painter: QPainter, node_pos: QPointF, node_id: str):
+        dx = node_pos.x() - self.circle_center.x()
+        dy = node_pos.y() - self.circle_center.y()
+        dist = math.hypot(dx, dy)
+
+        if dist > 0:
+            offset_dist = self.selected_node_radius + 10.0
+            text_x = node_pos.x() + (dx / dist) * offset_dist
+            text_y = node_pos.y() + (dy / dist) * offset_dist
+        else:
+            text_x = node_pos.x() + 15
+            text_y = node_pos.y() - 15
+
+        font = painter.font()
+        font.setPointSize(9)
+        font.setBold(True)
+        painter.setFont(font)
+
+        painter.setPen(QColor(50, 50, 50))
+
+        metrics = painter.fontMetrics()
+        text_width = metrics.horizontalAdvance(node_id)
+        text_height = metrics.height()
+
+        rect_x = text_x - text_width / 2.0
+        rect_y = text_y - text_height / 2.0
+
+        painter.drawText(QPointF(rect_x, rect_y + metrics.ascent()), node_id)
 
     def _draw_selected_node_highlight(self, painter: QPainter, node_pos: QPointF):
         """

@@ -41,3 +41,17 @@ def test_circle_view_selection(qapp):
     # Clear selection
     view.clear_selection()
     assert len(view.selected_indices) == 0
+
+
+def test_circle_view_point_ids(qapp):
+    view = CircleView()
+    frame = DynamicFrame(
+        time_index=0,
+        time_value=0.0,
+        spins=np.array([1, -1, 1], dtype=np.int8),
+        x_values=np.array([0.0, 0.5, -0.5], dtype=float)
+    )
+    view.set_frame(frame)
+
+    view.set_point_ids(["node_A", "node_B", "node_C"])
+    assert view.point_ids == ["node_A", "node_B", "node_C"]

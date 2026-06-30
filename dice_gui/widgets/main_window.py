@@ -225,6 +225,7 @@ class MainWindow(QMainWindow):
                 if i < num_nodes:
                     self.point_ids[i] = str(p_id)
 
+        self.circle_view.set_point_ids(self.point_ids)
         self.point_info_panel.clear_info("No point selected")
 
         self.timer.stop()
@@ -365,6 +366,7 @@ class MainWindow(QMainWindow):
     def on_point_id_changed(self, node_index: int, new_id: str):
         if 0 <= node_index < len(self.point_ids):
             self.point_ids[node_index] = new_id
+            self.circle_view.set_point_ids(self.point_ids)
 
     def selected_parser_id(self) -> str | None:
         if self.parser_combo_box.count() == 0:

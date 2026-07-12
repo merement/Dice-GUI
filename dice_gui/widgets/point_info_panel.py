@@ -53,13 +53,27 @@ class PointInfoPanel(QGroupBox):
         # Table Widget
         self.table = QTableWidget(self)
         self.table.setColumnCount(5)
-        self.table.setHorizontalHeaderLabels(["#", "Id", "Sigma", "X", "Delta"])
+        self.table.setHorizontalHeaderLabels(["#", "Id", "Spin", "X", "ΔX"])
 
         # Configure Table properties
         self.table.setSelectionBehavior(QAbstractItemView.SelectionBehavior.SelectRows)
         self.table.setSelectionMode(QAbstractItemView.SelectionMode.ExtendedSelection)
-        self.table.horizontalHeader().setSectionResizeMode(QHeaderView.ResizeMode.Stretch)
         self.table.verticalHeader().setVisible(False)
+
+        # Set specific column resizing behavior to ensure X and Δ are wide enough
+        header = self.table.horizontalHeader()
+        header.setSectionResizeMode(QHeaderView.ResizeMode.Interactive)
+        header.setSectionResizeMode(0, QHeaderView.ResizeMode.Interactive)
+        header.setSectionResizeMode(1, QHeaderView.ResizeMode.Stretch)  # Id stretches
+        header.setSectionResizeMode(2, QHeaderView.ResizeMode.Interactive)
+        header.setSectionResizeMode(3, QHeaderView.ResizeMode.Interactive)
+        header.setSectionResizeMode(4, QHeaderView.ResizeMode.Interactive)
+
+        # Apply initial widths
+        self.table.setColumnWidth(0, 35)   # #
+        self.table.setColumnWidth(2, 45)   # Spin
+        self.table.setColumnWidth(3, 55)   # X
+        self.table.setColumnWidth(4, 55)   # Δ
 
         main_layout.addWidget(self.table)
         self.setLayout(main_layout)
@@ -148,7 +162,7 @@ class PointInfoPanel(QGroupBox):
             item_id.setFlags(item_id.flags() | Qt.ItemFlag.ItemIsEditable)
             self.table.setItem(row_idx, 1, item_id)
 
-            # Column 2: Sigma (spin)
+            # Column 2: Spin
             sigma_str = "+1" if spin == 1 else "-1" if spin == -1 else str(spin)
             item_sigma = QTableWidgetItem(sigma_str)
             item_sigma.setData(Qt.ItemDataRole.UserRole, node_idx)

@@ -18,7 +18,7 @@ def test_point_info_panel_init(qapp):
     assert panel.table.columnCount() == 5
     assert panel.show_all_radio.isChecked()
     headers = [panel.table.horizontalHeaderItem(i).text() for i in range(5)]
-    assert headers == ["#", "Id", "Sigma", "X", "Delta"]
+    assert headers == ["#", "Id", "Spin", "X", "ΔX"]
 
 
 def test_point_info_panel_update_points(qapp):

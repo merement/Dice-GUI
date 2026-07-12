@@ -125,7 +125,7 @@ class MainWindow(QMainWindow):
 
         content_splitter.setStretchFactor(0, 1)
         content_splitter.setStretchFactor(1, 0)
-        content_splitter.setSizes([950, 250])
+        content_splitter.setSizes([960, 320])
 
         root_layout.addWidget(input_group)
         root_layout.addWidget(playback_group)

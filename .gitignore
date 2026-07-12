@@ -1,6 +1,40 @@
+# Environment
 .venv/
+env/
+venv/
+
+# Python build / cache
 __pycache__/
-*.pyc
+*.py[cod]
+*.so
+.Python
+build/
+dist/
+*.egg-info/
+.eggs/
+
+# Testing / coverage
+.coverage
 .pytest_cache/
-tests/data
-tmp
+htmlcov/
+.coverage.*
+.cache
+
+# Editor / IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Temporary / debug files
+tmp/
+temp/
+*.log
+nosetests.xml
+coverage.xml
+*.coverage
+docs/_build/

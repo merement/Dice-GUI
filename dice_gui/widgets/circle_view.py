@@ -2,7 +2,7 @@
 
 import math
 
-from PyQt6.QtCore import QPointF, Qt, pyqtSignal
+from PyQt6.QtCore import QPointF, QRectF, Qt, pyqtSignal
 from PyQt6.QtGui import QBrush, QColor, QMouseEvent, QPainter, QPen
 from PyQt6.QtWidgets import QWidget
 
@@ -57,6 +57,11 @@ class CircleView(QWidget):
         self.selected_node_radius = SELECTED_NODE_RADIUS
 
         self.reserved_left_space = 25
+
+        self._drag_start_pos = None
+        self._drag_current_pos = None
+        self._is_dragging = False
+        self._selection_at_drag_start = set()
 
         self._update_circle_geometry()
 
@@ -130,6 +135,17 @@ class CircleView(QWidget):
         if self.frame is not None:
             self._draw_frame(painter, self.frame)
 
+        # Draw stylish rubber band selection box
+        if self._is_dragging and self._drag_start_pos is not None and self._drag_current_pos is not None:
+            rect = QRectF(self._drag_start_pos, self._drag_current_pos).normalized()
+            pen = QPen(COLOR_SELECTED_OUTLINE)
+            pen.setWidth(1)
+            pen.setStyle(Qt.PenStyle.DashLine)
+            painter.setPen(pen)
+            brush = QBrush(QColor(255, 215, 0, 30))  # transparent gold
+            painter.setBrush(brush)
+            painter.drawRect(rect)
+
         painter.end()
 
     def resizeEvent(self, event):  # pyright: ignore[reportIncompatibleMethodOverride]
@@ -149,23 +165,67 @@ class CircleView(QWidget):
         modifiers = event.modifiers()
         has_shift = bool(modifiers & Qt.KeyboardModifier.ShiftModifier)
 
-        clicked_pos = event.position()
-        nearest_index, nearest_distance = self._nearest_node(clicked_pos)
-        if nearest_distance is not None and nearest_distance <= self.node_hit_radius:
-            assert nearest_index is not None
-            if has_shift:
-                new_indices = set(self.selected_indices)
-                if nearest_index in new_indices:
-                    new_indices.remove(nearest_index)
-                else:
-                    new_indices.add(nearest_index)
-                self.set_selected_indices(new_indices)
-            else:
-                self.set_selected_indices({nearest_index})
+        if has_shift:
+            self._is_dragging = True
+            self._drag_start_pos = event.position()
+            self._drag_current_pos = event.position()
+            self._selection_at_drag_start = set(self.selected_indices)
         else:
-            if not has_shift:
+            self._is_dragging = False
+            clicked_pos = event.position()
+            nearest_index, nearest_distance = self._nearest_node(clicked_pos)
+            if nearest_distance is not None and nearest_distance <= self.node_hit_radius:
+                assert nearest_index is not None
+                self.set_selected_indices({nearest_index})
+            else:
                 self.clear_selection()
         event.accept()
+
+    def mouseMoveEvent(self, event: QMouseEvent):  # pyright: ignore[reportIncompatibleMethodOverride]
+        if self._is_dragging and self._drag_start_pos is not None:
+            self._drag_current_pos = event.position()
+            rect = QRectF(self._drag_start_pos, self._drag_current_pos).normalized()
+            points_in_rect = self._get_nodes_in_rect(rect)
+            new_selection = self._selection_at_drag_start | points_in_rect
+            self.set_selected_indices(new_selection)
+            self.update()
+        else:
+            super().mouseMoveEvent(event)
+
+    def mouseReleaseEvent(self, event: QMouseEvent):  # pyright: ignore[reportIncompatibleMethodOverride]
+        if event.button() == Qt.MouseButton.LeftButton and self._is_dragging:
+            if self._drag_start_pos is not None:
+                diff = event.position() - self._drag_start_pos
+                distance = math.hypot(diff.x(), diff.y())
+                if distance < 5.0:
+                    nearest_index, nearest_distance = self._nearest_node(self._drag_start_pos)
+                    if nearest_distance is not None and nearest_distance <= self.node_hit_radius:
+                        assert nearest_index is not None
+                        new_indices = set(self._selection_at_drag_start)
+                        if nearest_index in new_indices:
+                            new_indices.remove(nearest_index)
+                        else:
+                            new_indices.add(nearest_index)
+                        self.set_selected_indices(new_indices)
+                    else:
+                        self.set_selected_indices(self._selection_at_drag_start)
+            self._is_dragging = False
+            self._drag_start_pos = None
+            self._drag_current_pos = None
+            self._selection_at_drag_start = set()
+            self.update()
+        else:
+            super().mouseReleaseEvent(event)
+
+    def _get_nodes_in_rect(self, rect: QRectF) -> set[int]:
+        if self.frame is None:
+            return set()
+        indices = set()
+        for idx in range(self._num_nodes()):
+            pos = self._node_screen_position(idx)
+            if rect.contains(pos):
+                indices.add(idx)
+        return indices
 
     def _calculate_circle_geometry(self):
         """

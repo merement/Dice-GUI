@@ -1,3 +1,4 @@
+import numpy as np
 from PyQt6.QtCore import Qt, pyqtSignal
 from PyQt6.QtWidgets import (
     QGroupBox,
@@ -25,6 +26,7 @@ class PointInfoPanel(QGroupBox):
 
         self._last_spins = None
         self._last_x_values = None
+        self._last_delta_x_values = None
         self._last_selected_indices = set()
         self._last_point_ids = []
         self._updating_table = False
@@ -96,16 +98,22 @@ class PointInfoPanel(QGroupBox):
         """
         self._last_spins = None
         self._last_x_values = None
+        self._last_delta_x_values = None
         self._last_selected_indices = set()
         self._last_point_ids = []
         self._refresh_table()
 
-    def update_points(self, spins, x_values, selected_indices, point_ids):
+    def update_points(self, spins, x_values, selected_indices, point_ids, next_x_values=None):
         """
         Updates the table with data from the current frame.
         """
-        self._last_spins = spins
-        self._last_x_values = x_values
+        self._last_spins = np.asarray(spins)
+        self._last_x_values = np.asarray(x_values)
+
+        if next_x_values is not None:
+            self._last_delta_x_values = np.asarray(next_x_values) - self._last_x_values
+        else:
+            self._last_delta_x_values = np.zeros_like(self._last_x_values)
 
         if selected_indices is None:
             self._last_selected_indices = set()
@@ -142,14 +150,15 @@ class PointInfoPanel(QGroupBox):
         for i in range(num_nodes):
             spin = self._last_spins[i]
             x_val = self._last_x_values[i]
+            delta_x = self._last_delta_x_values[i] if self._last_delta_x_values is not None else 0.0
             p_id = self._last_point_ids[i] if i < len(self._last_point_ids) else ""
 
             if show_all or (i in self._last_selected_indices):
-                rows_to_show.append((i, spin, x_val, p_id))
+                rows_to_show.append((i, spin, x_val, delta_x, p_id))
 
         self.table.setRowCount(len(rows_to_show))
 
-        for row_idx, (node_idx, spin, x_val, p_id) in enumerate(rows_to_show):
+        for row_idx, (node_idx, spin, x_val, delta_x, p_id) in enumerate(rows_to_show):
             # Column 0: Number (index)
             item_num = QTableWidgetItem(str(node_idx))
             item_num.setData(Qt.ItemDataRole.UserRole, node_idx)
@@ -176,7 +185,7 @@ class PointInfoPanel(QGroupBox):
             self.table.setItem(row_idx, 3, item_x)
 
             # Column 4: Delta
-            item_delta = QTableWidgetItem("")
+            item_delta = QTableWidgetItem(f"{delta_x:.6f}")
             item_delta.setData(Qt.ItemDataRole.UserRole, node_idx)
             item_delta.setFlags(item_delta.flags() & ~Qt.ItemFlag.ItemIsEditable)
             self.table.setItem(row_idx, 4, item_delta)

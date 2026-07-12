@@ -37,17 +37,28 @@ def test_point_info_panel_update_points(qapp):
     assert panel.table.item(0, 1).text() == "A"
     assert panel.table.item(0, 2).text() == "+1"
     assert panel.table.item(0, 3).text() == "0.100000"
+    assert panel.table.item(0, 4).text() == "0.000000"
 
     # Row 1
     assert panel.table.item(1, 0).text() == "1"
     assert panel.table.item(1, 1).text() == "B"
     assert panel.table.item(1, 2).text() == "-1"
     assert panel.table.item(1, 3).text() == "-0.200000"
+    assert panel.table.item(1, 4).text() == "0.000000"
 
     # Row 1 should be selected
     selected_ranges = panel.table.selectedRanges()
     assert len(selected_ranges) == 1
     assert selected_ranges[0].topRow() == 1
+
+    # Now update with next_x_values
+    next_x_values = [0.3, -0.05]
+    panel.update_points(spins, x_values, selected_indices={1}, point_ids=point_ids, next_x_values=next_x_values)
+
+    # Delta for A: 0.3 - 0.1 = 0.2
+    assert panel.table.item(0, 4).text() == "0.200000"
+    # Delta for B: -0.05 - (-0.2) = 0.15
+    assert panel.table.item(1, 4).text() == "0.150000"
 
 
 def test_point_info_panel_filter(qapp):

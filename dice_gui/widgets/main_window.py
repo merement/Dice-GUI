@@ -333,11 +333,16 @@ class MainWindow(QMainWindow):
             self.point_info_panel.clear_info("Invalid frame index")
             return
 
+        next_x_values = None
+        if time_index + 1 < data.num_frames:
+            next_x_values = data.x_values[time_index + 1]
+
         self.point_info_panel.update_points(
             spins=frame.spins,
             x_values=frame.x_values,
             selected_indices=self.selected_point_indices,
             point_ids=self.point_ids,
+            next_x_values=next_x_values,
         )
 
     def on_point_selection_changed_from_table(self, selected_indices: set[int] | list[int] | None):

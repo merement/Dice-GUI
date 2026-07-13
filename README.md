@@ -67,7 +67,30 @@ The first value is the simulation time.
 
 The remaining values are spin/coordinate pairs: `(s_i, x_i)`.
 
-Lines starting with `#` are ignored (can be used for comments or metadata).
+Lines starting with `#` but not `#@` are ignored (can be used for comments).
+
+
+### Raw data with metadata
+
+This format extends the raw format by embedding machine-readable JSON metadata objects inside comment lines prefixed with `#@`. This allows files to specify the formatting version, global indexing base (`0` or `1`), title, description, timestamp, and custom node names, while remaining fully backward compatible with legacy raw parsers.
+
+Example of a file header containing metadata:
+
+```text
+# Simulation metadata (this is an ordinary comment)
+#@ {"type": "format", "name": "relaxed-spins", "version": 1}
+#@ {"type": "created", "value": "2026-01-26T18:44:00Z"}
+#@ {"type": "title", "value": "Trajectory for test run 42"}
+#@ {"type": "description", "value": "Simulation after thermal relaxation."}
+#@ {"type": "node_indexing", "base": 1}
+#@ {"type": "node", "index": 1, "name": "CTRL_1"}
+#@ {"type": "node", "index": 5, "name": "pass_a"}
+
+0.000  1 0.12  -1 0.44 ...
+0.100  1 0.15  -1 0.43 ...
+```
+
+For more details on the metadata schema, see the [metadata-specification.md](file:///home/misha/Documents/projects/dicing/Dice-GUI/docs/metadata-specification.md).
 
 
 ## Planned Features
@@ -80,14 +103,14 @@ Planned or desired functionality includes:
 - [x] Circular visualization of dynamic variables.
 - [x] Parser abstraction for multiple file formats (registry & load service).
 - [ ] Parser plugin support.
-- [x] Point selection by mouse.
+- [x] Point selection by mouse (supports click selection and Shift-drag box selection).
 - [x] Point selection by index (implemented via interactive point list table).
 - [x] Display of selected point state (time, index, spin, X coordinate, and ID).
 - [ ] Zooming into a region of the circle.
 - [ ] Hiding selected points.
 - [x] Showing only selected points (implemented via "Show selected" table filter).
 - [ ] Plotting selected point histories over time.
-- [ ] Optional static graph/simulation metadata support.
+- [x] Optional static graph/simulation metadata support (Phase 1 implemented: raw-metadata parser).
 - [ ] Backend streaming mode.
 - [ ] Backend feedback/control messages.
 
@@ -202,10 +225,12 @@ Phase 1: Robustness & Verification (Completed)
 - Visual warning dialogs for file load failures (`QMessageBox`).
 
 Phase 2: Medium-Term Features (Feature Expansion)
-1. Point selection by index.
-2. Zooming and filtering (hiding/showing selected points).
-3. Historical selected point plotting (using `pyqtgraph` or `matplotlib`).
-4. Support for multiple text-based/structured data formats (JSON/YAML).
+1. Point selection by index (Completed).
+2. Shift-drag selection box on visualizer (Completed).
+3. Parsing raw data with embedded metadata format (Phase 1 Completed: raw-metadata parser).
+4. Zooming and filtering (hiding/showing selected points).
+5. Historical selected point plotting (using `pyqtgraph` or `matplotlib`).
+6. Support for multiple text-based/structured data formats (JSON/YAML).
 
 Phase 3: Long-Term Integration
 1. Plugin infrastructure for external parsers.

@@ -4,6 +4,7 @@ from pathlib import Path
 
 from dice_gui.domain import LoadedSimulation
 from dice_gui.parsers import ParseError, TimeSpinXParser
+from dice_gui.raw_metadata_parser import RawMetadataParser
 
 # from typing import Protocol
 # class SimulationParser(Protocol):
@@ -59,7 +60,8 @@ class ParserRegistry:
 
 def create_default_parser_registry() -> ParserRegistry:
     registry = ParserRegistry()
-    registry.register(TimeSpinXParser(), default=True)
+    registry.register(RawMetadataParser(), default=True)
+    registry.register(TimeSpinXParser(), default=False)
     return registry
 
 

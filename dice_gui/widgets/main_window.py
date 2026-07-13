@@ -233,10 +233,20 @@ class MainWindow(QMainWindow):
         self.setup_time_slider()
 
         source = loaded_simulation.source_path
-        if source is not None:
-            self.status_bar.showMessage(f"Loaded: {source}")
+        source_str = f"Loaded: {source}" if source is not None else "Loaded simulation"
+
+        warnings_list = []
+        has_metadata = False
+        if loaded_simulation.static_data is not None and loaded_simulation.static_data.metadata is not None:
+            warnings_list = loaded_simulation.static_data.metadata.get("warnings", [])
+            has_metadata = loaded_simulation.static_data.metadata.get("has_metadata", False)
+
+        if warnings_list:
+            self.status_bar.showMessage(f"{source_str} with {len(warnings_list)} metadata warnings")
+        elif has_metadata:
+            self.status_bar.showMessage(f"{source_str} (metadata loaded successfully)")
         else:
-            self.status_bar.showMessage("Loaded simulation")
+            self.status_bar.showMessage(f"{source_str} (no metadata found)")
 
     @property
     def simulation_data(self):

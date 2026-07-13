@@ -16,7 +16,7 @@ def test_parse_valid_with_metadata_base1(tmp_path: Path):
         '#@ {"type": "node", "index": 2, "name": "CTRL_2"}\n'
         '#@ {"type": "created", "value": "2026-01-26T18:44:00Z"}\n'
         '#@ {"type": "title", "value": "Test Run"}\n'
-        '#@ {"type": "description", "value": "Mock run desc"}\n'
+        '#@ {"type": "notes", "value": "Mock run desc"}\n'
         "0.000 1 0.011 -1 -0.357\n"
         "0.010 -1 0.015 1 0.301\n"
     )
@@ -32,9 +32,10 @@ def test_parse_valid_with_metadata_base1(tmp_path: Path):
     metadata = loaded.static_data.metadata
     assert metadata["has_metadata"] is True
     assert metadata["title"] == "Test Run"
-    assert metadata["description"] == "Mock run desc"
+    assert metadata["notes"] == "Mock run desc"
     assert metadata["created"] == "2026-01-26T18:44:00Z"
     assert metadata["node_ids"] == ["CTRL_1", "CTRL_2"]
+    assert metadata["base"] == 1
     assert len(metadata["warnings"]) == 0
 
 
@@ -53,6 +54,7 @@ def test_parse_valid_with_metadata_base0(tmp_path: Path):
 
     metadata = loaded.static_data.metadata
     assert metadata["node_ids"] == ["A", "B"]
+    assert metadata["base"] == 0
     assert len(metadata["warnings"]) == 0
 
 
@@ -70,6 +72,7 @@ def test_parse_omitted_indexing_base(tmp_path: Path):
 
     metadata = loaded.static_data.metadata
     assert metadata["node_ids"] == ["NodeA"]
+    assert metadata["base"] == 1
     assert len(metadata["warnings"]) == 0
 
 

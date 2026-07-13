@@ -19,7 +19,7 @@ class FileLoaderPanel(QWidget):
         self._dialog_title = "Select Simulation Data File"
         self._file_filter = "All Files (*)"
 
-        self.open_button = QPushButton("Open Simulation File", self)
+        self.open_button = QPushButton("Open Data File", self)
 
         self._setup_ui()
 

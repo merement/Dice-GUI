@@ -47,7 +47,7 @@ class RawMetadataParser:
         has_metadata = False
 
         title = None
-        description = None
+        notes = None
         created = None
 
         expected_num_nodes: int | None = None
@@ -140,7 +140,7 @@ class RawMetadataParser:
 
                         node_names[python_index] = str(name_val)
 
-                    elif rec_type in ("created", "title", "description"):
+                    elif rec_type in ("created", "title", "notes"):
                         val = record.get("value")
                         if val is None:
                             warn_msg = f"Line {line_number}: Metadata record type {rec_type!r} missing 'value' field"
@@ -152,8 +152,8 @@ class RawMetadataParser:
                             created = str(val)
                         elif rec_type == "title":
                             title = str(val)
-                        elif rec_type == "description":
-                            description = str(val)
+                        elif rec_type == "notes":
+                            notes = str(val)
 
                     else:
                         # Ignore unknown record types in permissive mode
@@ -258,11 +258,12 @@ class RawMetadataParser:
             "node_ids": node_ids,
             "warnings": warnings,
             "has_metadata": has_metadata,
+            "base": final_base,
         }
         if title is not None:
             static_metadata["title"] = title
-        if description is not None:
-            static_metadata["description"] = description
+        if notes is not None:
+            static_metadata["notes"] = notes
         if created is not None:
             static_metadata["created"] = created
 

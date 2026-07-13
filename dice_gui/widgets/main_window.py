@@ -6,6 +6,7 @@
 from PyQt6.QtCore import Qt, QTimer
 from PyQt6.QtWidgets import (
     QComboBox,
+    QGridLayout,
     QGroupBox,
     QHBoxLayout,
     QLabel,
@@ -35,7 +36,7 @@ class MainWindow(QMainWindow):
         super().__init__()
 
         self.setWindowTitle("Dice GUI")
-        self.resize(1300, 800)
+        self.resize(1100, 800)
 
         self.status_bar = QStatusBar(self)
         self.setStatusBar(self.status_bar)
@@ -65,6 +66,12 @@ class MainWindow(QMainWindow):
         self.parser_combo_box = QComboBox(self)
         self.file_loader_panel = FileLoaderPanel()
 
+        # Metadata display labels
+        self.meta_title_label = QLabel("- -", self)
+        self.meta_notes_label = QLabel("- -", self)
+        self.meta_created_label = QLabel("- -", self)
+        self.meta_base_label = QLabel("- -", self)
+
         # Playback controls
         self.time_slider = QSlider(Qt.Orientation.Horizontal, self)
         self.time_slider.setMinimum(0)
@@ -89,6 +96,9 @@ class MainWindow(QMainWindow):
         root_layout.setContentsMargins(8, 8, 8, 8)
         root_layout.setSpacing(8)
 
+        # Top section layout holding Input and Metadata horizontally
+        top_layout = QHBoxLayout()
+
         # ----- Input group -----
         input_group = QGroupBox("Input", self)
         input_layout = QHBoxLayout(input_group)
@@ -96,7 +106,35 @@ class MainWindow(QMainWindow):
         input_layout.addWidget(QLabel("Format:", self))
         input_layout.addWidget(self.parser_combo_box)
         input_layout.addWidget(self.file_loader_panel)
-        input_layout.addStretch(1)
+
+        # ----- Metadata group -----
+        metadata_group = QGroupBox("Metadata", self)
+        metadata_layout = QGridLayout(metadata_group)
+        metadata_layout.setContentsMargins(8, 4, 8, 4)
+        metadata_layout.setSpacing(6)
+
+        # Labels and displays arranged in a grid
+        metadata_layout.addWidget(QLabel("Title:", self), 0, 0)
+        metadata_layout.addWidget(self.meta_title_label, 0, 1)
+        metadata_layout.addWidget(QLabel("Created:", self), 0, 2)
+        metadata_layout.addWidget(self.meta_created_label, 0, 3)
+
+        metadata_layout.addWidget(QLabel("Notes:", self), 1, 0)
+        metadata_layout.addWidget(self.meta_notes_label, 1, 1)
+        metadata_layout.addWidget(QLabel("Base:", self), 1, 2)
+        metadata_layout.addWidget(self.meta_base_label, 1, 3)
+
+        # Configure stretch factors for columns in the Metadata grid
+        metadata_layout.setColumnStretch(0, 0)
+        metadata_layout.setColumnStretch(1, 2)
+        metadata_layout.setColumnStretch(2, 0)
+        metadata_layout.setColumnStretch(3, 1)
+
+        # Add to top horizontal layout
+        top_layout.addWidget(input_group, stretch=0)
+        top_layout.addWidget(metadata_group, stretch=1)
+
+        root_layout.addLayout(top_layout)
 
         # ----- Playback group -----
         playback_group = QGroupBox("Playback", self)
@@ -125,9 +163,8 @@ class MainWindow(QMainWindow):
 
         content_splitter.setStretchFactor(0, 1)
         content_splitter.setStretchFactor(1, 0)
-        content_splitter.setSizes([960, 320])
+        content_splitter.setSizes([760, 320])
 
-        root_layout.addWidget(input_group)
         root_layout.addWidget(playback_group)
         root_layout.addWidget(content_splitter, stretch=1)
 
@@ -247,6 +284,29 @@ class MainWindow(QMainWindow):
             self.status_bar.showMessage(f"{source_str} (metadata loaded successfully)")
         else:
             self.status_bar.showMessage(f"{source_str} (no metadata found)")
+
+        self._update_metadata_labels()
+
+    def _update_metadata_labels(self):
+        loaded = self.loaded_simulation
+        if (loaded is None or 
+                loaded.static_data is None or 
+                loaded.static_data.metadata is None or 
+                not loaded.static_data.metadata.get("has_metadata", False)):
+            self.meta_title_label.setText("- -")
+            self.meta_notes_label.setText("- -")
+            self.meta_created_label.setText("- -")
+            self.meta_base_label.setText("- -")
+            return
+
+        meta = loaded.static_data.metadata
+        self.meta_title_label.setText(str(meta.get("title", "- -")))
+        self.meta_notes_label.setText(str(meta.get("notes", "- -")))
+        self.meta_created_label.setText(str(meta.get("created", "- -")))
+        
+        base_val = meta.get("base")
+        base_str = str(base_val) if base_val is not None else "- -"
+        self.meta_base_label.setText(base_str)
 
     @property
     def simulation_data(self):

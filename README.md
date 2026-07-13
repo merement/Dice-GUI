@@ -72,7 +72,7 @@ Lines starting with `#` but not `#@` are ignored (can be used for comments).
 
 ### Raw data with metadata
 
-This format extends the raw format by embedding machine-readable JSON metadata objects inside comment lines prefixed with `#@`. This allows files to specify the formatting version, global indexing base (`0` or `1`), title, description, timestamp, and custom node names, while remaining fully backward compatible with legacy raw parsers.
+This format extends the raw format by embedding machine-readable JSON metadata objects inside comment lines prefixed with `#@`. This allows files to specify the formatting version, global indexing base (`0` or `1`), title, notes, timestamp, and custom node names, while remaining fully backward compatible with legacy raw parsers.
 
 Example of a file header containing metadata:
 
@@ -81,7 +81,7 @@ Example of a file header containing metadata:
 #@ {"type": "format", "name": "relaxed-spins", "version": 1}
 #@ {"type": "created", "value": "2026-01-26T18:44:00Z"}
 #@ {"type": "title", "value": "Trajectory for test run 42"}
-#@ {"type": "description", "value": "Simulation after thermal relaxation."}
+#@ {"type": "notes", "value": "Simulation after thermal relaxation."}
 #@ {"type": "node_indexing", "base": 1}
 #@ {"type": "node", "index": 1, "name": "CTRL_1"}
 #@ {"type": "node", "index": 5, "name": "pass_a"}

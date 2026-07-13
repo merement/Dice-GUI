@@ -45,6 +45,7 @@ class RawMetadataParser:
         node_names: dict[int, str] = {}
         warnings: list[str] = []
         has_metadata = False
+        raw_records = []
 
         title = None
         notes = None
@@ -83,6 +84,9 @@ class RawMetadataParser:
                         logger.warning(warn_msg)
                         warnings.append(warn_msg)
                         continue
+
+                    if rec_type != "node":
+                        raw_records.append(record)
 
                     if rec_type == "format":
                         # Ignored or checked in later phases
@@ -259,6 +263,7 @@ class RawMetadataParser:
             "warnings": warnings,
             "has_metadata": has_metadata,
             "base": final_base,
+            "raw_records": raw_records,
         }
         if title is not None:
             static_metadata["title"] = title

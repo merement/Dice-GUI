@@ -38,6 +38,10 @@ def test_parse_valid_with_metadata_base1(tmp_path: Path):
     assert metadata["base"] == 1
     assert len(metadata["warnings"]) == 0
 
+    raw_recs = metadata["raw_records"]
+    assert len(raw_recs) == 5
+    assert [r["type"] for r in raw_recs] == ["format", "node_indexing", "created", "title", "notes"]
+
 
 def test_parse_valid_with_metadata_base0(tmp_path: Path):
     file_path = tmp_path / "valid_base0.dat"

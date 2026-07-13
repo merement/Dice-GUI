@@ -6,7 +6,6 @@
 from PyQt6.QtCore import Qt, QTimer
 from PyQt6.QtWidgets import (
     QComboBox,
-    QGridLayout,
     QGroupBox,
     QHBoxLayout,
     QLabel,
@@ -24,6 +23,7 @@ from dice_gui.loading import FileLoadService, ParserRegistry
 from dice_gui.widgets.circle_view import CircleView
 from dice_gui.widgets.file_loader_panel import FileLoaderPanel
 from dice_gui.widgets.point_info_panel import PointInfoPanel
+from dice_gui.widgets.metadata_panel import MetadataPanel
 
 
 class MainWindow(QMainWindow):
@@ -66,11 +66,8 @@ class MainWindow(QMainWindow):
         self.parser_combo_box = QComboBox(self)
         self.file_loader_panel = FileLoaderPanel()
 
-        # Metadata display labels
-        self.meta_title_label = QLabel("- -", self)
-        self.meta_notes_label = QLabel("- -", self)
-        self.meta_created_label = QLabel("- -", self)
-        self.meta_base_label = QLabel("- -", self)
+        # Metadata display panel
+        self.metadata_panel = MetadataPanel(self)
 
         # Playback controls
         self.time_slider = QSlider(Qt.Orientation.Horizontal, self)
@@ -107,32 +104,9 @@ class MainWindow(QMainWindow):
         input_layout.addWidget(self.parser_combo_box)
         input_layout.addWidget(self.file_loader_panel)
 
-        # ----- Metadata group -----
-        metadata_group = QGroupBox("Metadata", self)
-        metadata_layout = QGridLayout(metadata_group)
-        metadata_layout.setContentsMargins(8, 4, 8, 4)
-        metadata_layout.setSpacing(6)
-
-        # Labels and displays arranged in a grid
-        metadata_layout.addWidget(QLabel("Title:", self), 0, 0)
-        metadata_layout.addWidget(self.meta_title_label, 0, 1)
-        metadata_layout.addWidget(QLabel("Created:", self), 0, 2)
-        metadata_layout.addWidget(self.meta_created_label, 0, 3)
-
-        metadata_layout.addWidget(QLabel("Notes:", self), 1, 0)
-        metadata_layout.addWidget(self.meta_notes_label, 1, 1)
-        metadata_layout.addWidget(QLabel("Base:", self), 1, 2)
-        metadata_layout.addWidget(self.meta_base_label, 1, 3)
-
-        # Configure stretch factors for columns in the Metadata grid
-        metadata_layout.setColumnStretch(0, 0)
-        metadata_layout.setColumnStretch(1, 2)
-        metadata_layout.setColumnStretch(2, 0)
-        metadata_layout.setColumnStretch(3, 1)
-
         # Add to top horizontal layout
         top_layout.addWidget(input_group, stretch=0)
-        top_layout.addWidget(metadata_group, stretch=1)
+        top_layout.addWidget(self.metadata_panel, stretch=1)
 
         root_layout.addLayout(top_layout)
 
@@ -285,28 +259,31 @@ class MainWindow(QMainWindow):
         else:
             self.status_bar.showMessage(f"{source_str} (no metadata found)")
 
-        self._update_metadata_labels()
+        metadata = None
+        if loaded_simulation.static_data is not None:
+            metadata = loaded_simulation.static_data.metadata
+        self.metadata_panel.set_metadata(metadata)
 
-    def _update_metadata_labels(self):
-        loaded = self.loaded_simulation
-        if (loaded is None or 
-                loaded.static_data is None or 
-                loaded.static_data.metadata is None or 
-                not loaded.static_data.metadata.get("has_metadata", False)):
-            self.meta_title_label.setText("- -")
-            self.meta_notes_label.setText("- -")
-            self.meta_created_label.setText("- -")
-            self.meta_base_label.setText("- -")
-            return
-
-        meta = loaded.static_data.metadata
-        self.meta_title_label.setText(str(meta.get("title", "- -")))
-        self.meta_notes_label.setText(str(meta.get("notes", "- -")))
-        self.meta_created_label.setText(str(meta.get("created", "- -")))
-        
-        base_val = meta.get("base")
-        base_str = str(base_val) if base_val is not None else "- -"
-        self.meta_base_label.setText(base_str)
+    # Example placeholder showing how metadata can be updated dynamically
+    # programmatically and propagate automatically to the MetadataPanel:
+    #
+    # def simulate_dynamic_metadata_update(self, new_records: list[dict]):
+    #     if self.loaded_simulation is None or self.loaded_simulation.static_data is None:
+    #         return
+    #
+    #     meta = self.loaded_simulation.static_data.metadata
+    #     meta["raw_records"] = new_records
+    #
+    #     # Extract and update standard fields
+    #     for rec in new_records:
+    #         r_type = rec.get("type")
+    #         if r_type in ("title", "notes", "created"):
+    #             meta[r_type] = rec.get("value")
+    #         elif r_type == "node_indexing":
+    #             meta["base"] = rec.get("base", 1)
+    #
+    #     # Propagate the updates to the MetadataPanel
+    #     self.metadata_panel.set_metadata(meta)
 
     @property
     def simulation_data(self):

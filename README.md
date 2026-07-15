@@ -90,7 +90,7 @@ Example of a file header containing metadata:
 0.100  1 0.15  -1 0.43 ...
 ```
 
-For more details on the metadata schema, see the [metadata-specification.md](file:///home/misha/Documents/projects/dicing/Dice-GUI/docs/metadata-specification.md).
+For more details on the metadata schema, see the [metadata-schema.md](file:///home/misha/Documents/projects/dicing/Dice-GUI/docs/metadata-schema.md).
 
 
 ## Planned Features

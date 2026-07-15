@@ -3,7 +3,10 @@
 #  connects widgets
 #  manages current loaded data
 
+import os
+
 from PyQt6.QtCore import Qt, QTimer
+from PyQt6.QtGui import QDragEnterEvent, QDropEvent
 from PyQt6.QtWidgets import (
     QComboBox,
     QGroupBox,
@@ -57,6 +60,7 @@ class MainWindow(QMainWindow):
         self._connect_signals()
         self._populate_parser_combo_box()
         self.set_controls_enabled(False)
+        self.setAcceptDrops(True)
 
         if initial_file is not None:
             self.load_file(initial_file, initial_parser_id)
@@ -425,3 +429,34 @@ class MainWindow(QMainWindow):
             return None
 
         return self.parser_combo_box.currentData()
+
+    def dragEnterEvent(self, event: QDragEnterEvent) -> None:
+        """
+        Accept drag move events containing files.
+        """
+        if event.mimeData().hasUrls():
+            event.acceptProposedAction()
+        else:
+            event.ignore()
+
+    def dropEvent(self, event: QDropEvent) -> None:
+        """
+        Handle drop events by opening the dropped file with the default parser.
+        """
+        urls = event.mimeData().urls()
+        if urls:
+            file_path = urls[0].toLocalFile()
+            if file_path and os.path.isfile(file_path):
+                default_parser_id = self.parser_registry.default_parser_id
+
+                # Update combo box selector to the default parser
+                default_index = self.parser_combo_box.findData(default_parser_id)
+                if default_index >= 0:
+                    self.parser_combo_box.setCurrentIndex(default_index)
+
+                self.load_file(file_path, default_parser_id)
+                event.acceptProposedAction()
+            else:
+                event.ignore()
+        else:
+            event.ignore()

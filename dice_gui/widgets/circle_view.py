@@ -339,7 +339,7 @@ class CircleView(QWidget):
         font.setBold(True)
         painter.setFont(font)
 
-        painter.setPen(QColor(50, 50, 50))
+        painter.setPen(self.palette().windowText().color())
 
         metrics = painter.fontMetrics()
         text_width = metrics.horizontalAdvance(node_id)

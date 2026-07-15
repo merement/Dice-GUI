@@ -1,4 +1,4 @@
-# dice_gui/parsers.py
+# dice_gui/parsers/base.py
 #
 # Implements the parsers for the simulation data files.
 # TimeSpinXParser (raw data parser) parses files of the form:
@@ -136,12 +136,3 @@ class TimeSpinXParser:
                 x_values=np.array(all_x_values, dtype=float),
             ),
         )
-
-
-# class AggregatedSimulationParser:
-#     id = "aggregated"
-#     name = "Aggregated simulation file"
-#     file_filter = "Aggregated simulation files (*.json *.yaml *.sim)"
-
-#     def parse_file(self, file_path: str | Path) -> LoadedSimulation:
-#         pass

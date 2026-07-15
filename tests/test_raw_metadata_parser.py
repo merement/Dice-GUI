@@ -2,8 +2,7 @@
 
 import pytest
 from pathlib import Path
-from dice_gui.raw_metadata_parser import RawMetadataParser
-from dice_gui.parsers import ParseError
+from dice_gui.parsers import RawMetadataParser, ParseError
 from dice_gui.domain import LoadedSimulation
 
 

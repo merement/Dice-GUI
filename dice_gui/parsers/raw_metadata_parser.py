@@ -1,4 +1,4 @@
-# dice_gui/raw_metadata_parser.py
+# dice_gui/parsers/raw_metadata_parser.py
 #
 # Implements a metadata-aware parser for DICE/Ising-type simulation data.
 # It parses JSON-formatted metadata in `#@`-prefixed comment lines,
@@ -15,7 +15,7 @@ from dice_gui.domain import (
     TimeSeriesData,
     StaticSimulationData,
 )
-from dice_gui.parsers import ParseError
+from .base import ParseError
 
 logger = logging.getLogger(__name__)
 

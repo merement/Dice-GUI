@@ -41,6 +41,15 @@ class CircleView(QWidget):
         None  -> no point selected
     """
 
+    zoom_requested = pyqtSignal(float, float)
+    """
+    Emitted when a zoom operation is completed.
+
+    Payload:
+        float -> start coordinate x_min
+        float -> end coordinate x_max
+    """
+
     def __init__(self, parent=None):
         super().__init__(parent)
         self.setMinimumHeight(500)
@@ -61,6 +70,7 @@ class CircleView(QWidget):
         self._drag_start_pos = None
         self._drag_current_pos = None
         self._is_dragging = False
+        self._is_zoom_dragging = False
         self._selection_at_drag_start = set()
 
         self._update_circle_geometry()
@@ -136,7 +146,7 @@ class CircleView(QWidget):
             self._draw_frame(painter, self.frame)
 
         # Draw stylish rubber band selection box
-        if self._is_dragging and self._drag_start_pos is not None and self._drag_current_pos is not None:
+        if (self._is_dragging or self._is_zoom_dragging) and self._drag_start_pos is not None and self._drag_current_pos is not None:
             rect = QRectF(self._drag_start_pos, self._drag_current_pos).normalized()
             pen = QPen(COLOR_SELECTED_OUTLINE)
             pen.setWidth(1)
@@ -167,55 +177,130 @@ class CircleView(QWidget):
 
         if has_shift:
             self._is_dragging = True
+            self._is_zoom_dragging = False
             self._drag_start_pos = event.position()
             self._drag_current_pos = event.position()
             self._selection_at_drag_start = set(self.selected_indices)
         else:
             self._is_dragging = False
-            clicked_pos = event.position()
-            nearest_index, nearest_distance = self._nearest_node(clicked_pos)
-            if nearest_distance is not None and nearest_distance <= self.node_hit_radius:
-                assert nearest_index is not None
-                self.set_selected_indices({nearest_index})
-            else:
-                self.clear_selection()
+            self._is_zoom_dragging = False
+            self._drag_start_pos = event.position()
+            self._drag_current_pos = event.position()
         event.accept()
 
     def mouseMoveEvent(self, event: QMouseEvent):  # pyright: ignore[reportIncompatibleMethodOverride]
-        if self._is_dragging and self._drag_start_pos is not None:
-            self._drag_current_pos = event.position()
-            rect = QRectF(self._drag_start_pos, self._drag_current_pos).normalized()
-            points_in_rect = self._get_nodes_in_rect(rect)
-            new_selection = self._selection_at_drag_start | points_in_rect
-            self.set_selected_indices(new_selection)
-            self.update()
+        if self._drag_start_pos is not None:
+            if self._is_dragging:
+                self._drag_current_pos = event.position()
+                rect = QRectF(self._drag_start_pos, self._drag_current_pos).normalized()
+                points_in_rect = self._get_nodes_in_rect(rect)
+                new_selection = self._selection_at_drag_start | points_in_rect
+                self.set_selected_indices(new_selection)
+                self.update()
+            else:
+                # Potential zoom drag
+                diff = event.position() - self._drag_start_pos
+                distance = math.hypot(diff.x(), diff.y())
+                if distance > 5.0:
+                    self._is_zoom_dragging = True
+                    self._drag_current_pos = event.position()
+                    self.update()
         else:
             super().mouseMoveEvent(event)
 
     def mouseReleaseEvent(self, event: QMouseEvent):  # pyright: ignore[reportIncompatibleMethodOverride]
-        if event.button() == Qt.MouseButton.LeftButton and self._is_dragging:
-            if self._drag_start_pos is not None:
-                diff = event.position() - self._drag_start_pos
-                distance = math.hypot(diff.x(), diff.y())
-                if distance < 5.0:
-                    nearest_index, nearest_distance = self._nearest_node(self._drag_start_pos)
+        if event.button() == Qt.MouseButton.LeftButton:
+            if self._is_dragging:
+                if self._drag_start_pos is not None:
+                    diff = event.position() - self._drag_start_pos
+                    distance = math.hypot(diff.x(), diff.y())
+                    if distance < 5.0:
+                        nearest_index, nearest_distance = self._nearest_node(self._drag_start_pos)
+                        if nearest_distance is not None and nearest_distance <= self.node_hit_radius:
+                            assert nearest_index is not None
+                            new_indices = set(self._selection_at_drag_start)
+                            if nearest_index in new_indices:
+                                new_indices.remove(nearest_index)
+                            else:
+                                new_indices.add(nearest_index)
+                            self.set_selected_indices(new_indices)
+                        else:
+                            self.set_selected_indices(self._selection_at_drag_start)
+                self._is_dragging = False
+                self._drag_start_pos = None
+                self._drag_current_pos = None
+                self._selection_at_drag_start = set()
+                self.update()
+            elif self._is_zoom_dragging:
+                if self._drag_start_pos is not None and self._drag_current_pos is not None:
+                    rect = QRectF(self._drag_start_pos, self._drag_current_pos).normalized()
+                    interval = self._get_x_interval_in_rect(rect)
+                    if interval is not None:
+                        x_min, x_max = interval
+                        self.zoom_requested.emit(x_min, x_max)
+                self._is_zoom_dragging = False
+                self._drag_start_pos = None
+                self._drag_current_pos = None
+                self.update()
+            else:
+                # Click selection without shift
+                if self._drag_start_pos is not None:
+                    clicked_pos = self._drag_start_pos
+                    nearest_index, nearest_distance = self._nearest_node(clicked_pos)
                     if nearest_distance is not None and nearest_distance <= self.node_hit_radius:
                         assert nearest_index is not None
-                        new_indices = set(self._selection_at_drag_start)
-                        if nearest_index in new_indices:
-                            new_indices.remove(nearest_index)
-                        else:
-                            new_indices.add(nearest_index)
-                        self.set_selected_indices(new_indices)
+                        self.set_selected_indices({nearest_index})
                     else:
-                        self.set_selected_indices(self._selection_at_drag_start)
-            self._is_dragging = False
-            self._drag_start_pos = None
-            self._drag_current_pos = None
-            self._selection_at_drag_start = set()
-            self.update()
+                        self.clear_selection()
+                self._drag_start_pos = None
+                self._drag_current_pos = None
+                self.update()
+            event.accept()
         else:
             super().mouseReleaseEvent(event)
+
+    def _get_x_interval_in_rect(self, rect: QRectF) -> tuple[float, float] | None:
+        """
+        Sample points on the circle to determine which interval of x falls in the rect.
+        Handles wrap-around by complement of largest gap.
+        """
+        samples = 2000
+        in_rect_indices = []
+        for i in range(samples + 1):
+            x = -1.0 + 2.0 * i / samples
+            pos = self._x_to_screen_position(x)
+            if rect.contains(pos):
+                in_rect_indices.append(i)
+
+        if not in_rect_indices:
+            return None
+
+        in_rect_indices.sort()
+        n = len(in_rect_indices)
+        if n == 1:
+            x_val = -1.0 + 2.0 * in_rect_indices[0] / samples
+            return x_val, x_val
+
+        # Find gaps
+        gaps = []
+        for idx in range(n - 1):
+            gap = in_rect_indices[idx + 1] - in_rect_indices[idx]
+            gaps.append((gap, idx))
+        # Wrap-around gap
+        wrap_gap = (in_rect_indices[0] + samples + 1) - in_rect_indices[-1]
+        gaps.append((wrap_gap, n - 1))
+
+        # Complement of the largest gap
+        max_gap, max_gap_idx = max(gaps, key=lambda item: item[0])
+
+        # Selected interval starts after the largest gap
+        start_idx = in_rect_indices[(max_gap_idx + 1) % n]
+        end_idx = in_rect_indices[max_gap_idx]
+
+        x_min = -1.0 + 2.0 * start_idx / samples
+        x_max = -1.0 + 2.0 * end_idx / samples
+
+        return x_min, x_max
 
     def _get_nodes_in_rect(self, rect: QRectF) -> set[int]:
         if self.frame is None:

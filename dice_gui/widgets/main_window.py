@@ -27,6 +27,7 @@ from dice_gui.widgets.circle_view import CircleView
 from dice_gui.widgets.file_loader_panel import FileLoaderPanel
 from dice_gui.widgets.point_info_panel import PointInfoPanel
 from dice_gui.widgets.metadata_panel import MetadataPanel
+from dice_gui.widgets.zoom_window import ZoomWindow
 
 
 class MainWindow(QMainWindow):
@@ -51,6 +52,7 @@ class MainWindow(QMainWindow):
         self.loaded_simulation = None
         self.selected_point_indices: set[int] = set()
         self.point_ids: list[str] = []
+        self.zoom_windows: list[ZoomWindow] = []
 
         self.timer = QTimer(self)
         self.timer.timeout.connect(self.progress)
@@ -162,6 +164,7 @@ class MainWindow(QMainWindow):
         self.play_pause_button.clicked.connect(self.toggle_play_pause)
 
         self.circle_view.selection_changed.connect(self.on_point_selection_changed)
+        self.circle_view.zoom_requested.connect(self.open_zoom_window)
         self.point_info_panel.point_selected.connect(
             self.on_point_selection_changed_from_table
         )
@@ -228,6 +231,10 @@ class MainWindow(QMainWindow):
         self.loaded_simulation = loaded_simulation
         self.selected_point_indices = set()
         self.circle_view.clear_selection()
+
+        for zw in list(self.zoom_windows):
+            zw.close()
+        self.zoom_windows.clear()
 
         # Initialize point IDs from static_data metadata or default to empty strings
         num_nodes = loaded_simulation.dynamic_data.num_nodes
@@ -324,6 +331,9 @@ class MainWindow(QMainWindow):
         self.circle_view.set_frame(frame)
         self._update_point_info_label()
 
+        for zw in self.zoom_windows:
+            zw.zoomed_view.set_frame(frame)
+
     def progress(self):
         if self.time_slider.value() < self.time_slider.maximum():
             self.time_slider.setValue(self.time_slider.value() + 1)
@@ -343,24 +353,31 @@ class MainWindow(QMainWindow):
             self.play_pause_button.setText("Play")
             self.timer.stop()
 
-    def on_point_selection_changed(self, selected_indices: set[int] | list[int] | None):
+    def set_app_selection(self, new_indices: set[int], sender=None) -> None:
         """
-        Receive selection updates from CircleView.
-
-        MainWindow owns the app-level selected point indices because future
-        widgets, such as PointInfoPanel, will also need this state.
+        Unified method to synchronize node selection state across all visual components.
         """
-        if selected_indices is None:
-            new_indices = set()
-        else:
-            new_indices = set(selected_indices)
-
         if self.selected_point_indices == new_indices:
             return
-
         self.selected_point_indices = new_indices
+
+        # Update main circle view
+        if sender != self.circle_view:
+            self.circle_view.blockSignals(True)
+            self.circle_view.set_selected_indices(new_indices)
+            self.circle_view.blockSignals(False)
+
+        # Update all active zoom windows
+        for zw in self.zoom_windows:
+            if sender != zw.zoomed_view:
+                zw.zoomed_view.blockSignals(True)
+                zw.zoomed_view.set_selected_indices(new_indices)
+                zw.zoomed_view.blockSignals(False)
+
+        # Update point info panel table
         self._update_point_info_label()
 
+        # Update status bar
         if not new_indices:
             self.status_bar.showMessage("Point selection cleared")
         elif len(new_indices) == 1:
@@ -368,7 +385,7 @@ class MainWindow(QMainWindow):
         else:
             self.status_bar.showMessage(f"Selected {len(new_indices)} points")
 
-    def _update_point_info_label(self):
+    def _update_point_info_label(self) -> None:
         """
         Update the PointInfoPanel widget.
         """
@@ -396,33 +413,44 @@ class MainWindow(QMainWindow):
             next_x_values=next_x_values,
         )
 
-    def on_point_selection_changed_from_table(self, selected_indices: set[int] | list[int] | None):
+    def on_point_selection_changed(self, selected_indices: set[int] | list[int] | None) -> None:
+        """
+        Receive selection updates from CircleView or ZoomedCircleView.
+        """
         if selected_indices is None:
             new_indices = set()
         else:
             new_indices = set(selected_indices)
+        self.set_app_selection(new_indices, sender=self.sender())
 
-        if self.selected_point_indices == new_indices:
-            return
-        self.selected_point_indices = new_indices
-
-        self.circle_view.blockSignals(True)
-        self.circle_view.set_selected_indices(new_indices)
-        self.circle_view.blockSignals(False)
-
-        self._update_point_info_label()
-
-        if not new_indices:
-            self.status_bar.showMessage("Point selection cleared")
-        elif len(new_indices) == 1:
-            self.status_bar.showMessage(f"Selected point {next(iter(new_indices))}")
+    def on_point_selection_changed_from_table(self, selected_indices: set[int] | list[int] | None) -> None:
+        """
+        Receive selection updates from PointInfoPanel table.
+        """
+        if selected_indices is None:
+            new_indices = set()
         else:
-            self.status_bar.showMessage(f"Selected {len(new_indices)} points")
+            new_indices = set(selected_indices)
+        self.set_app_selection(new_indices, sender=self.point_info_panel)
 
-    def on_point_id_changed(self, node_index: int, new_id: str):
+    def open_zoom_window(self, x_min: float, x_max: float) -> None:
+        """
+        Open a new ZoomWindow showing a subset of the circle coordinate space.
+        """
+        zoom_win = ZoomWindow(x_min, x_max, self)
+        self.zoom_windows.append(zoom_win)
+
+        # Connect recursive zoom requested on zoomed view to this handler
+        zoom_win.zoomed_view.zoom_requested.connect(self.open_zoom_window)
+
+        zoom_win.show()
+
+    def on_point_id_changed(self, node_index: int, new_id: str) -> None:
         if 0 <= node_index < len(self.point_ids):
             self.point_ids[node_index] = new_id
             self.circle_view.set_point_ids(self.point_ids)
+            for zw in self.zoom_windows:
+                zw.zoomed_view.set_point_ids(self.point_ids)
 
     def selected_parser_id(self) -> str | None:
         if self.parser_combo_box.count() == 0:

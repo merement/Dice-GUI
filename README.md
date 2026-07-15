@@ -97,7 +97,7 @@ For more details on the metadata schema, see the [metadata-schema.md](file:///ho
 
 Planned or desired functionality includes:
 
-- [x] File-based loading of dynamic simulation data.
+- [x] File-based loading of dynamic simulation data (supports click-to-load and file drag-and-drop).
 - [x] Time slider for moving through frames.
 - [x] Play/pause animation.
 - [x] Circular visualization of dynamic variables.
@@ -106,7 +106,7 @@ Planned or desired functionality includes:
 - [x] Point selection by mouse (supports click selection and Shift-drag box selection).
 - [x] Point selection by index (implemented via interactive point list table).
 - [x] Display of selected point state (time, index, spin, X coordinate, and ID).
-- [ ] Zooming into a region of the circle.
+- [x] Zooming into a region of the circle (implemented via normal click-drag to open a synchronized zoom window).
 - [ ] Hiding selected points.
 - [x] Showing only selected points (implemented via "Show selected" table filter).
 - [ ] Plotting selected point histories over time.
@@ -228,7 +228,7 @@ Phase 2: Medium-Term Features (Feature Expansion)
 1. Point selection by index (Completed).
 2. Shift-drag selection box on visualizer (Completed).
 3. Parsing raw data with embedded metadata format (Phase 1 Completed: raw-metadata parser).
-4. Zooming and filtering (hiding/showing selected points).
+4. Zooming and filtering (Zooming and selection filtering Completed).
 5. Historical selected point plotting (using `pyqtgraph` or `matplotlib`).
 6. Support for multiple text-based/structured data formats (JSON/YAML).
 

@@ -38,8 +38,8 @@ def test_parse_valid_with_metadata_base1(tmp_path: Path):
     assert len(metadata["warnings"]) == 0
 
     raw_recs = metadata["raw_records"]
-    assert len(raw_recs) == 5
-    assert [r["type"] for r in raw_recs] == ["format", "node_indexing", "created", "title", "notes"]
+    assert len(raw_recs) == 7
+    assert [r["type"] for r in raw_recs] == ["format", "node_indexing", "node", "node", "created", "title", "notes"]
 
 
 def test_parse_valid_with_metadata_base0(tmp_path: Path):
@@ -76,7 +76,8 @@ def test_parse_omitted_indexing_base(tmp_path: Path):
     metadata = loaded.static_data.metadata
     assert metadata["node_ids"] == ["NodeA"]
     assert metadata["base"] == 1
-    assert len(metadata["warnings"]) == 0
+    assert len(metadata["warnings"]) == 1
+    assert any("not explicitly declared" in w for w in metadata["warnings"])
 
 
 def test_parse_metadata_warnings(tmp_path: Path):
@@ -85,8 +86,8 @@ def test_parse_metadata_warnings(tmp_path: Path):
         "# Regular comment to ignore\n"
         "#@ invalid_json_here\n"
         '#@ {"base": 1}\n'  # missing type
-        '#@ {"type": "node_indexing", "base": 2}\n'  # invalid base value
-        '#@ {"type": "node", "index": 1, "name": "FirstNode"}\n'
+        '#@ {"type": "node_indexing", "base": 2}\n'  # non-standard base value (normally 0 or 1)
+        '#@ {"type": "node", "index": 2, "name": "FirstNode"}\n'  # valid index 2 under base 2
         '#@ {"type": "node_indexing", "base": 1}\n'  # redefined base and base after node
         '#@ {"type": "node", "index": 0, "name": "NegativeIndex"}\n'  # invalid index for base 1
         '#@ {"type": "node", "index": 1}\n'  # missing name
@@ -109,11 +110,11 @@ def test_parse_metadata_warnings(tmp_path: Path):
 
     # Verify that warnings contain messages about specific parsing issues
     assert any("Invalid JSON metadata" in w for w in warnings)
-    assert any("missing 'type' field" in w for w in warnings)
-    assert any("Invalid index base" in w for w in warnings)
+    assert any("missing 'type' field" in w for w in warnings) or any("missing or invalid 'type' field" in w for w in warnings)
+    assert any("recommended to be 0 or 1" in w for w in warnings) or any("Invalid index base" in w for w in warnings)
     assert any("Indexing base redefined" in w for w in warnings) or any("Indexing base defined after node records" in w for w in warnings)
     assert any("Node index 0 is invalid" in w for w in warnings)
     assert any("Node record missing or invalid 'index' field" in w for w in warnings)
     assert any("Node record missing 'name' field" in w for w in warnings)
     assert any("missing 'value' field" in w for w in warnings)
-    assert any("out of bounds for simulation containing 2 nodes" in w for w in warnings)
+    assert any("out of bounds for active simulation containing 2 nodes" in w for w in warnings) or any("out of bounds for simulation containing 2 nodes" in w for w in warnings)

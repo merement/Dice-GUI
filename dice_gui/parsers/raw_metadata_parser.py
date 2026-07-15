@@ -1,29 +1,40 @@
 # dice_gui/parsers/raw_metadata_parser.py
 #
 # Implements a metadata-aware parser for DICE/Ising-type simulation data.
-# It parses JSON-formatted metadata in `#@`-prefixed comment lines,
-# while reading raw time/spin/x values from data lines.
+# It parses legacy raw DICE/Ising-type simulation files that may contain
+# JSON-formatted metadata in '#@'-prefixed comment lines.
+#
+# RawMetadataParser is responsible only for the legacy raw file format:
+#
+#   - blank lines
+#   - normal comments
+#   - '#@' metadata decorations
+#   - numeric time/spin/x data rows
+#
+# JSON metadata interpretation is delegated to JsonMetadataProcessor.
 
-import json
+from __future__ import annotations
+
 import logging
-import warnings as py_warnings
 from pathlib import Path
+
 import numpy as np
 
 from dice_gui.domain import (
     LoadedSimulation,
-    TimeSeriesData,
     StaticSimulationData,
+    TimeSeriesData,
 )
-from .base import ParseError
+from dice_gui.metadata import JsonMetadataProcessor, MetadataContext
+from dice_gui.parsers import ParseError
 
 logger = logging.getLogger(__name__)
 
 
 class RawMetadataParser:
     """
-    Parses time-dependent simulation files containing `#@` metadata comment records
-    and raw numeric data rows.
+    Parses time-dependent simulation files containing '#@' metadata comment
+    records and raw numeric data rows.
     """
 
     id = "raw-metadata"
@@ -40,18 +51,10 @@ class RawMetadataParser:
         all_spins: list[list[int]] = []
         all_x_values: list[list[float]] = []
 
-        base_index = None
-        base_index_resolved = False
-        node_names: dict[int, str] = {}
-        warnings: list[str] = []
-        has_metadata = False
-        raw_records = []
+        active_num_nodes: int | None = None
 
-        title = None
-        notes = None
-        created = None
-
-        expected_num_nodes: int | None = None
+        metadata_processor = JsonMetadataProcessor(strict=self.strict)
+        data_warnings: list[str] = []
 
         with file_path.open("r", encoding="utf-8") as file:
             for line_number, line in enumerate(file, start=1):
@@ -60,219 +63,51 @@ class RawMetadataParser:
                 if not stripped:
                     continue
 
-                # Check for metadata line
                 if stripped.startswith("#@"):
-                    has_metadata = True
-                    json_str = stripped[2:].strip()
-                    try:
-                        record = json.loads(json_str)
-                    except json.JSONDecodeError as exc:
-                        warn_msg = f"Line {line_number}: Invalid JSON metadata: {exc}"
-                        logger.warning(warn_msg)
-                        warnings.append(warn_msg)
-                        continue
-
-                    if not isinstance(record, dict):
-                        warn_msg = f"Line {line_number}: Metadata record is not a JSON object"
-                        logger.warning(warn_msg)
-                        warnings.append(warn_msg)
-                        continue
-
-                    rec_type = record.get("type")
-                    if not rec_type:
-                        warn_msg = f"Line {line_number}: Metadata record missing 'type' field"
-                        logger.warning(warn_msg)
-                        warnings.append(warn_msg)
-                        continue
-
-                    if rec_type != "node":
-                        raw_records.append(record)
-
-                    if rec_type == "format":
-                        # Ignored or checked in later phases
-                        continue
-
-                    elif rec_type == "node_indexing":
-                        base_val = record.get("base")
-                        if base_val is None or base_val not in (0, 1):
-                            warn_msg = f"Line {line_number}: Invalid index base {base_val!r}, defaulting to 1"
-                            logger.warning(warn_msg)
-                            warnings.append(warn_msg)
-                            resolved_base = 1
-                        else:
-                            resolved_base = int(base_val)
-
-                        if base_index is not None:
-                            warn_msg = f"Line {line_number}: Indexing base redefined, ignoring"
-                            logger.warning(warn_msg)
-                            warnings.append(warn_msg)
-                        elif node_names:
-                            warn_msg = f"Line {line_number}: Indexing base defined after node records, ignoring"
-                            logger.warning(warn_msg)
-                            warnings.append(warn_msg)
-                        else:
-                            base_index = resolved_base
-                            base_index_resolved = True
-
-                    elif rec_type == "node":
-                        if base_index is None:
-                            base_index = 1  # default base
-                            base_index_resolved = True
-
-                        raw_idx = record.get("index")
-                        name_val = record.get("name")
-
-                        if raw_idx is None or not isinstance(raw_idx, (int, float)) or isinstance(raw_idx, bool):
-                            warn_msg = f"Line {line_number}: Node record missing or invalid 'index' field"
-                            logger.warning(warn_msg)
-                            warnings.append(warn_msg)
-                            continue
-
-                        if name_val is None:
-                            warn_msg = f"Line {line_number}: Node record missing 'name' field"
-                            logger.warning(warn_msg)
-                            warnings.append(warn_msg)
-                            continue
-
-                        idx = int(raw_idx)
-                        python_index = idx - base_index
-                        if python_index < 0:
-                            warn_msg = f"Line {line_number}: Node index {idx} is invalid for base {base_index}"
-                            logger.warning(warn_msg)
-                            warnings.append(warn_msg)
-                            continue
-
-                        node_names[python_index] = str(name_val)
-
-                    elif rec_type in ("created", "title", "notes"):
-                        val = record.get("value")
-                        if val is None:
-                            warn_msg = f"Line {line_number}: Metadata record type {rec_type!r} missing 'value' field"
-                            logger.warning(warn_msg)
-                            warnings.append(warn_msg)
-                            continue
-
-                        if rec_type == "created":
-                            created = str(val)
-                        elif rec_type == "title":
-                            title = str(val)
-                        elif rec_type == "notes":
-                            notes = str(val)
-
-                    else:
-                        # Ignore unknown record types in permissive mode
-                        continue
-
-                elif stripped.startswith("#"):
-                    # Regular comment, ignore
+                    metadata_processor.process_json_string(
+                        stripped[2:].strip(),
+                        context=MetadataContext(
+                            source=str(file_path),
+                            line_number=line_number,
+                        ),
+                    )
                     continue
 
-                else:
-                    # Data line
-                    values = stripped.split()
-                    if len(values) < 3:
-                        raise ParseError(
-                            f"Line {line_number}: expected at least one time value "
-                            f"and one spin/x pair."
-                        )
+                if stripped.startswith("#"):
+                    continue
 
-                    try:
-                        time_value = float(values[0])
-                    except ValueError as exc:
-                        raise ParseError(
-                            f"Line {line_number}: invalid time value {values[0]!r}."
-                        ) from exc
+                parsed_row = self._parse_data_line(
+                    stripped,
+                    source=str(file_path),
+                    line_number=line_number,
+                    active_num_nodes=active_num_nodes,
+                    data_warnings=data_warnings,
+                )
 
-                    data_values = values[1:]
-                    if len(data_values) % 2 != 0:
-                        raise ParseError(
-                            f"Line {line_number}: expected an even number of spin/x values "
-                            f"after the time column, got {len(data_values)}."
-                        )
+                if parsed_row is None:
+                    continue
 
-                    num_nodes = len(data_values) // 2
-                    if expected_num_nodes is None:
-                        expected_num_nodes = num_nodes
-                    elif num_nodes != expected_num_nodes:
-                        raise ParseError(
-                            f"Line {line_number}: expected {expected_num_nodes} nodes, "
-                            f"got {num_nodes}."
-                        )
+                time_value, spins, x_values = parsed_row
 
-                    spins: list[int] = []
-                    x_values: list[float] = []
+                if active_num_nodes is None:
+                    active_num_nodes = len(spins)
 
-                    for i in range(0, len(data_values), 2):
-                        raw_spin = data_values[i]
-                        raw_x = data_values[i + 1]
-
-                        try:
-                            spin = int(raw_spin)
-                        except ValueError as exc:
-                            raise ParseError(
-                                f"Line {line_number}: invalid spin value {raw_spin!r}."
-                            ) from exc
-
-                        if spin not in {-1, 1}:
-                            raise ParseError(
-                                f"Line {line_number}: spin must be -1 or 1, got {spin}."
-                            )
-
-                        try:
-                            x = float(raw_x)
-                        except ValueError as exc:
-                            raise ParseError(
-                                f"Line {line_number}: invalid x value {raw_x!r}."
-                            ) from exc
-
-                        if not -1.0 <= x <= 1.0:
-                            raise ParseError(
-                                f"Line {line_number}: x must be in [-1, 1], got {x}."
-                            )
-
-                        spins.append(spin)
-                        x_values.append(x)
-
-                    times.append(time_value)
-                    all_spins.append(spins)
-                    all_x_values.append(x_values)
+                times.append(time_value)
+                all_spins.append(spins)
+                all_x_values.append(x_values)
 
         if not times:
-            raise ParseError(f"File {file_path} contains no data.")
+            raise ParseError(f"File {file_path} contains no usable data.")
 
-        # Compute indexing base if not resolved
-        final_base = base_index if base_index is not None else 1
+        num_nodes = active_num_nodes if active_num_nodes is not None else 0
 
-        # Post-parse: validate and construct node ID list
-        num_nodes = expected_num_nodes if expected_num_nodes is not None else 0
-        node_ids = [""] * num_nodes
+        static_metadata = metadata_processor.build_static_metadata(
+            num_nodes=num_nodes,
+        )
 
-        for py_idx, name in node_names.items():
-            if 0 <= py_idx < num_nodes:
-                node_ids[py_idx] = name
-            else:
-                warn_msg = (
-                    f"Node index {py_idx + final_base} (calculated from index {py_idx + final_base} "
-                    f"and base {final_base}) is out of bounds for simulation containing {num_nodes} nodes"
-                )
-                logger.warning(warn_msg)
-                warnings.append(warn_msg)
-
-        static_metadata = {
-            "node_ids": node_ids,
-            "warnings": warnings,
-            "has_metadata": has_metadata,
-            "base": final_base,
-            "raw_records": raw_records,
-        }
-        if title is not None:
-            static_metadata["title"] = title
-        if notes is not None:
-            static_metadata["notes"] = notes
-        if created is not None:
-            static_metadata["created"] = created
-
-        static_data = StaticSimulationData(metadata=static_metadata)
+        if data_warnings:
+            static_metadata.setdefault("warnings", []).extend(data_warnings)
+            static_metadata.setdefault("data_warnings", []).extend(data_warnings)
 
         return LoadedSimulation(
             dynamic_data=TimeSeriesData(
@@ -280,5 +115,117 @@ class RawMetadataParser:
                 spins=np.array(all_spins, dtype=np.int8),
                 x_values=np.array(all_x_values, dtype=float),
             ),
-            static_data=static_data,
+            static_data=StaticSimulationData(metadata=static_metadata),
         )
+
+    def _parse_data_line(
+        self,
+        stripped: str,
+        *,
+        source: str,
+        line_number: int,
+        active_num_nodes: int | None,
+        data_warnings: list[str],
+    ) -> tuple[float, list[int], list[float]] | None:
+        values = stripped.split()
+
+        if len(values) < 3:
+            self._data_warning_or_raise(
+                f"{source}, Line {line_number}: expected at least one time value "
+                "and one spin/x pair; row ignored.",
+                data_warnings,
+            )
+            return None
+
+        try:
+            time_value = float(values[0])
+        except ValueError:
+            self._data_warning_or_raise(
+                f"{source}, Line {line_number}: invalid time value "
+                f"{values[0]!r}; row ignored.",
+                data_warnings,
+            )
+            return None
+
+        data_values = values[1:]
+
+        if len(data_values) % 2 != 0:
+            self._data_warning_or_raise(
+                f"{source}, Line {line_number}: expected an even number of spin/x "
+                f"values after the time column, got {len(data_values)}; row ignored.",
+                data_warnings,
+            )
+            return None
+
+        num_nodes = len(data_values) // 2
+
+        # Current domain model expects rectangular arrays. Future frame-based or
+        # segmented dynamic data can relax this policy. For now, permissive mode
+        # skips incompatible rows rather than failing the whole load.
+        if active_num_nodes is not None and num_nodes != active_num_nodes:
+            self._data_warning_or_raise(
+                f"{source}, Line {line_number}: active data has {active_num_nodes} "
+                f"nodes, but this row has {num_nodes}; row ignored.",
+                data_warnings,
+            )
+            return None
+
+        spins: list[int] = []
+        x_values: list[float] = []
+
+        for pair_index, i in enumerate(range(0, len(data_values), 2)):
+            raw_spin = data_values[i]
+            raw_x = data_values[i + 1]
+
+            try:
+                spin = int(raw_spin)
+            except ValueError:
+                self._data_warning_or_raise(
+                    f"{source}, Line {line_number}: invalid spin value "
+                    f"{raw_spin!r} for node position {pair_index}; row ignored.",
+                    data_warnings,
+                )
+                return None
+
+            if spin not in {-1, 1}:
+                self._data_warning_or_raise(
+                    f"{source}, Line {line_number}: spin must be -1 or 1, "
+                    f"got {spin} for node position {pair_index}; row ignored.",
+                    data_warnings,
+                )
+                return None
+
+            try:
+                x = float(raw_x)
+            except ValueError:
+                self._data_warning_or_raise(
+                    f"{source}, Line {line_number}: invalid x value "
+                    f"{raw_x!r} for node position {pair_index}; row ignored.",
+                    data_warnings,
+                )
+                return None
+
+            if not -1.0 <= x <= 1.0:
+                self._data_warning_or_raise(
+                    f"{source}, Line {line_number}: x must be in [-1, 1], "
+                    f"got {x} for node position {pair_index}; row ignored.",
+                    data_warnings,
+                )
+                return None
+
+            spins.append(spin)
+            x_values.append(x)
+
+        return time_value, spins, x_values
+
+    def _data_warning_or_raise(
+        self,
+        message: str,
+        data_warnings: list[str],
+    ) -> None:
+        logger.warning(message)
+
+        if self.strict:
+            raise ParseError(message)
+
+        data_warnings.append(message)

@@ -76,12 +76,14 @@ Identifies the specific layout and versioning parameters.
 
 #### Node Indexing
 
-Defines the global index base (`0` or `1`) for logical node references.
+Defines the index base (normally `0` or `1`) for logical node references.
 
-* Must appear before any records referencing node indices.
+* It is recommended for the node_indexing record to appear before any records referencing node indices.
 
 
-* It is **global** and cannot change mid-session. If omitted, parsers default to `base: 1`.
+* It is recommended that the node_indexing record be **global** and cannot change mid-session. If omitted, parsers default to `base: 1`. 
+
+* A diagnostic should be emitted if the node_indexing record is not found, or if the base is redefined mid-session, or if the base is defined after node records have been seen.
 
 
 * 

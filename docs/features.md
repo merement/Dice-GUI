@@ -1,3 +1,4 @@
+<!-- This file was generated -->
 # Interactive Visualizer Features and User Guide
 
 This document covers the advanced interaction, zooming, and metadata capabilities of the `Dice-GUI` application.
@@ -35,7 +36,21 @@ All launched Zoom Windows are fully synchronized with the main application sessi
 
 ---
 
-## 4. Supported Metadata Schema
+## 4. Point History Tracer
+
+The Point History Tracer allows visualizing the coordinate history of selected simulation points over time in specialized, non-modal plotting windows:
+- **Launching Traces**: Select one or more points in the main window or the Point Info Panel table, then click the **"Trace"** button inside the Point Info Panel.
+- **Tracer Window Content**: For each tracked point, a window titled `"Point # <index>  Id: <id>"` opens, showing a plot of `Time` (horizontal axis) vs. `X` (vertical axis).
+- **Dynamic X-Axis Range Scaling**: The vertical $X$ viewport is automatically centered and scaled around the coordinate range within the current time slice $[min_X - 0.05, max_X + 0.05]$ (clamped to the domain $[-1.0, 1.0]$).
+- **Time-Window Bound Shifts**: The plot displays a time slice of size `2 * TIME_WINDOW` (100 frames total). If timeline progression or slider scrolling shifts the current frame outside the visible window, the bounds dynamically shift to center on the new frame.
+- **Past vs. Future Color Coding**:
+  - Time steps in the past (up to the current frame) are color-coded dynamically based on the particle's spin value at each frame (using the same red/blue/gray color scheme).
+  - Time steps in the future (yet to be reached) are rendered in light gray.
+  - A dashed vertical line marks the current playback time position.
+
+---
+
+## 5. Supported Metadata Schema
 
 The application supports embedding machine-readable JSON metadata directly within simulation data files. This metadata defines settings such as the global indexing base, custom node IDs, simulation title, notes, and timestamp.
 

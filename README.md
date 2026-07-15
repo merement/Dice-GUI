@@ -109,7 +109,7 @@ Planned or desired functionality includes:
 - [x] Zooming into a region of the circle (implemented via normal click-drag to open a synchronized zoom window).
 - [ ] Hiding selected points.
 - [x] Showing only selected points (implemented via "Show selected" table filter).
-- [ ] Plotting selected point histories over time.
+- [x] Plotting selected point histories over time (implemented via non-modal point history tracer windows).
 - [x] Optional static graph/simulation metadata support (Phase 1 implemented: raw-metadata parser).
 - [ ] Backend streaming mode.
 - [ ] Backend feedback/control messages.
@@ -224,20 +224,20 @@ Phase 1: Robustness & Verification (Completed)
 - UI component modularization (custom `PointInfoPanel` widget).
 - Visual warning dialogs for file load failures (`QMessageBox`).
 
-Phase 2: Medium-Term Features (Feature Expansion)
-1. Point selection by index (Completed).
-2. Shift-drag selection box on visualizer (Completed).
-3. Parsing raw data with embedded metadata format (Phase 1 Completed: raw-metadata parser).
-4. Zooming and filtering (Zooming and selection filtering Completed).
-5. Historical selected point plotting (using `pyqtgraph` or `matplotlib`).
-6. Support for multiple text-based/structured data formats (JSON/YAML).
+Phase 2: Medium-Term Features (Completed)
+- Point selection by index (Completed).
+- Shift-drag selection box on visualizer (Completed).
+- Parsing raw data with embedded metadata format (Phase 1 Completed: raw-metadata parser).
+- Zooming and filtering (Zooming and selection filtering Completed).
+- Historical selected point plotting (Completed).
 
 Phase 3: Long-Term Integration
-1. Plugin infrastructure for external parsers.
-2. Support for static graph topologies and simulation parameter metadata.
-3. Backend live streaming mode (WebSockets/IPC).
-4. Simulation feedback and control signaling.
-5. Integration with workflow patterns in the Julia `Dice` library.
+1. Support for multiple text-based/structured data formats (JSON/YAML).
+2. Plugin infrastructure for external parsers.
+3. Support for static graph topologies and simulation parameter metadata.
+4. Backend live streaming mode (WebSockets/IPC).
+5. Simulation feedback and control signaling.
+6. Integration with workflow patterns in the Julia `Dice` library.
 
 ## Acknowledgments
 

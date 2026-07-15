@@ -11,6 +11,7 @@ from PyQt6.QtWidgets import (
     QHBoxLayout,
     QVBoxLayout,
     QHeaderView,
+    QPushButton,
 )
 
 
@@ -20,6 +21,7 @@ class PointInfoPanel(QGroupBox):
     """
     point_selected = pyqtSignal(object)  # Emits set of node_indices
     point_id_changed = pyqtSignal(int, str)  # Emits (node_index, new_id)
+    trace_clicked = pyqtSignal()
 
     def __init__(self, parent=None):
         super().__init__("Point Info", parent)
@@ -41,6 +43,7 @@ class PointInfoPanel(QGroupBox):
         self.show_all_radio = QRadioButton("Show all", self)
         self.show_selected_radio = QRadioButton("Show selected", self)
         self.show_all_radio.setChecked(True)
+        self.trace_button = QPushButton("Trace", self)
 
         self.button_group = QButtonGroup(self)
         self.button_group.addButton(self.show_all_radio)
@@ -48,6 +51,7 @@ class PointInfoPanel(QGroupBox):
 
         filter_layout.addWidget(self.show_all_radio)
         filter_layout.addWidget(self.show_selected_radio)
+        filter_layout.addWidget(self.trace_button)
         filter_layout.addStretch(1)
 
         main_layout.addLayout(filter_layout)
@@ -85,6 +89,7 @@ class PointInfoPanel(QGroupBox):
         self.show_selected_radio.toggled.connect(self._on_filter_changed)
         self.table.itemSelectionChanged.connect(self._on_table_selection_changed)
         self.table.itemChanged.connect(self._on_item_changed)
+        self.trace_button.clicked.connect(self.trace_clicked.emit)
 
     def update_info(self, time_value: float, index: int, spin: int, x_value: float):
         """

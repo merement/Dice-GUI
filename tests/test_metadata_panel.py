@@ -41,6 +41,16 @@ def test_metadata_panel_set_metadata(qapp):
     assert panel.meta_more_button.isEnabled()
 
 
+def test_metadata_panel_default_base(qapp):
+    panel = MetadataPanel()
+    meta = {
+        "has_metadata": True,
+        "title": "No base specified",
+    }
+    panel.set_metadata(meta)
+    assert panel.meta_base_label.text() == "1"
+
+
 def test_metadata_panel_clear_metadata(qapp):
     panel = MetadataPanel()
     meta = {

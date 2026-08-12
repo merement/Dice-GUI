@@ -363,6 +363,20 @@ class MainWindow(QMainWindow):
             self.play_pause_button.setText("Play")
             self.timer.stop()
 
+    def get_node_indexing(self) -> int:
+        """
+        Return the node indexing base from metadata, defaulting to 1.
+        """
+        if (
+            self.loaded_simulation is not None
+            and self.loaded_simulation.static_data is not None
+            and self.loaded_simulation.static_data.metadata is not None
+        ):
+            base_val = self.loaded_simulation.static_data.metadata.get("base")
+            if base_val is not None:
+                return base_val
+        return 1
+
     def set_app_selection(self, new_indices: set[int], sender=None) -> None:
         """
         Unified method to synchronize node selection state across all visual components.
@@ -391,7 +405,8 @@ class MainWindow(QMainWindow):
         if not new_indices:
             self.status_bar.showMessage("Point selection cleared")
         elif len(new_indices) == 1:
-            self.status_bar.showMessage(f"Selected point {next(iter(new_indices))}")
+            displayed_idx = next(iter(new_indices)) + self.get_node_indexing()
+            self.status_bar.showMessage(f"Selected point {displayed_idx}")
         else:
             self.status_bar.showMessage(f"Selected {len(new_indices)} points")
 
@@ -421,6 +436,7 @@ class MainWindow(QMainWindow):
             selected_indices=self.selected_point_indices,
             point_ids=self.point_ids,
             next_x_values=next_x_values,
+            node_indexing=self.get_node_indexing(),
         )
 
     def on_point_selection_changed(self, selected_indices: set[int] | list[int] | None) -> None:
@@ -485,7 +501,8 @@ class MainWindow(QMainWindow):
             node_index=node_index,
             point_id=point_id,
             simulation_data=self.simulation_data,
-            parent_window=self
+            parent_window=self,
+            node_indexing=self.get_node_indexing(),
         )
         self.history_windows.append(hw)
         hw.show()

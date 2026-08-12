@@ -57,7 +57,7 @@ def test_history_window_bounds_calculation(qapp):
     
     assert hw.node_index == 1
     assert hw.point_id == "test_id"
-    assert hw.windowTitle() == "Point # 1  Id: test_id"
+    assert hw.windowTitle() == "Point # 2  Id: test_id"
     assert hw.bound_left == 0
     assert hw.bound_right == TIME_WINDOW  # 50
     assert hw.current_frame == 0

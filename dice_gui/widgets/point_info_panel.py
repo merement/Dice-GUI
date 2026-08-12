@@ -32,8 +32,16 @@ class PointInfoPanel(QGroupBox):
         self._last_selected_indices = set()
         self._last_point_ids = []
         self._updating_table = False
+        self.node_indexing = 1
 
         self._init_ui()
+
+    def set_node_indexing(self, base: int | None = None):
+        """
+        Set the node indexing base (defaults to 1).
+        """
+        self.node_indexing = 1 if base is None else base
+        self._refresh_table()
 
     def _init_ui(self):
         main_layout = QVBoxLayout(self)
@@ -108,10 +116,21 @@ class PointInfoPanel(QGroupBox):
         self._last_point_ids = []
         self._refresh_table()
 
-    def update_points(self, spins, x_values, selected_indices, point_ids, next_x_values=None):
+    def update_points(
+        self,
+        spins,
+        x_values,
+        selected_indices,
+        point_ids,
+        next_x_values=None,
+        node_indexing: int | None = None,
+    ):
         """
         Updates the table with data from the current frame.
         """
+        if node_indexing is not None:
+            self.node_indexing = node_indexing
+
         self._last_spins = np.asarray(spins)
         self._last_x_values = np.asarray(x_values)
 
@@ -165,7 +184,8 @@ class PointInfoPanel(QGroupBox):
 
         for row_idx, (node_idx, spin, x_val, delta_x, p_id) in enumerate(rows_to_show):
             # Column 0: Number (index)
-            item_num = QTableWidgetItem(str(node_idx))
+            displayed_idx = node_idx + self.node_indexing
+            item_num = QTableWidgetItem(str(displayed_idx))
             item_num.setData(Qt.ItemDataRole.UserRole, node_idx)
             item_num.setFlags(item_num.flags() & ~Qt.ItemFlag.ItemIsEditable)
             self.table.setItem(row_idx, 0, item_num)

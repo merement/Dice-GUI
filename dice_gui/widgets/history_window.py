@@ -197,15 +197,24 @@ class HistoryPlotWidget(QWidget):
 
 
 class HistoryWindow(QMainWindow):
-    def __init__(self, node_index: int, point_id: str, simulation_data: TimeSeriesData, parent_window: QMainWindow):
+    def __init__(
+        self,
+        node_index: int,
+        point_id: str,
+        simulation_data: TimeSeriesData,
+        parent_window: QMainWindow,
+        node_indexing: int = 1,
+    ):
         super().__init__(parent_window)
         self.node_index = node_index
         self.point_id = point_id
         self.simulation_data = simulation_data
         self.parent_window = parent_window
+        self.node_indexing = node_indexing
 
         id_str = point_id if point_id else ""
-        self.setWindowTitle(f"Point # {node_index}  Id: {id_str}")
+        displayed_idx = node_index + node_indexing
+        self.setWindowTitle(f"Point # {displayed_idx}  Id: {id_str}")
         self.resize(600, 400)
 
         self.plot_widget = HistoryPlotWidget(simulation_data, node_index, self)

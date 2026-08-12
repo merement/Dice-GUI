@@ -121,8 +121,9 @@ class MetadataPanel(QGroupBox):
         self.meta_created_label.setText(str(metadata.get("created", "- -")))
 
         base_val = metadata.get("base")
-        base_str = str(base_val) if base_val is not None else "- -"
-        self.meta_base_label.setText(base_str)
+        if base_val is None:
+            base_val = 1
+        self.meta_base_label.setText(str(base_val))
 
         self._raw_records = metadata.get("raw_records", [])
         self.meta_more_button.setEnabled(len(self._raw_records) > 0)

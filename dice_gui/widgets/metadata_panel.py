@@ -10,6 +10,7 @@ from PyQt6.QtWidgets import (
     QTextBrowser,
     QVBoxLayout,
 )
+from dice_gui.icons import Icons
 
 
 class MetadataDialog(QDialog):
@@ -63,7 +64,9 @@ class MetadataPanel(QGroupBox):
         self.meta_notes_label = QLabel("- -", self)
         self.meta_created_label = QLabel("- -", self)
         self.meta_base_label = QLabel("- -", self)
-        self.meta_more_button = QPushButton("More...", self)
+        self.meta_more_button = QPushButton(self)
+        self.meta_more_button.setIcon(Icons.get("arrow-bold-filled-right"))
+        self.meta_more_button.setToolTip("Show full set of metadata records")
         self.meta_more_button.setEnabled(False)
 
         self._metadata_dialog = None

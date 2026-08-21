@@ -18,6 +18,8 @@ def test_metadata_panel_init(qapp):
     assert panel.meta_created_label.text() == "- -"
     assert panel.meta_base_label.text() == "- -"
     assert not panel.meta_more_button.isEnabled()
+    assert panel.meta_more_button.toolTip() == "Show full set of metadata records"
+    assert not panel.meta_more_button.icon().isNull()
 
 
 def test_metadata_panel_set_metadata(qapp):

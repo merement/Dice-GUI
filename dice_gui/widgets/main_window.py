@@ -29,6 +29,7 @@ from dice_gui.widgets.point_info_panel import PointInfoPanel
 from dice_gui.widgets.metadata_panel import MetadataPanel
 from dice_gui.widgets.zoom_window import ZoomWindow
 from dice_gui.widgets.trace_window import TraceWindow
+from dice_gui.icons import Icons
 
 
 class MainWindow(QMainWindow):
@@ -55,6 +56,7 @@ class MainWindow(QMainWindow):
         self.point_ids: list[str] = []
         self.zoom_windows: list[ZoomWindow] = []
         self.trace_windows: list[TraceWindow] = []
+        self._is_playing: bool = False
 
         self.timer = QTimer(self)
         self.timer.timeout.connect(self.progress)
@@ -83,9 +85,17 @@ class MainWindow(QMainWindow):
         self.time_slider.setTickPosition(QSlider.TickPosition.NoTicks)
         self.time_label = QLabel("0.000", self)
 
-        self.progress_button = QPushButton("Step Forward", self)
-        self.regress_button = QPushButton("Step Backward", self)
-        self.play_pause_button = QPushButton("Play", self)
+        self.progress_button = QPushButton(self)
+        self.progress_button.setIcon(Icons.get("step-right"))
+        self.progress_button.setToolTip("Step forward")
+
+        self.regress_button = QPushButton(self)
+        self.regress_button.setIcon(Icons.get("step-left"))
+        self.regress_button.setToolTip("Step backward")
+
+        self.play_pause_button = QPushButton(self)
+        self.play_pause_button.setIcon(Icons.get("triangle-right"))
+        self.play_pause_button.setToolTip("Play")
 
         # Main visualization
         self.circle_view = CircleView(self)
@@ -258,7 +268,9 @@ class MainWindow(QMainWindow):
         self.point_info_panel.clear_info("No point selected")
 
         self.timer.stop()
-        self.play_pause_button.setText("Play")
+        self._is_playing = False
+        self.play_pause_button.setIcon(Icons.get("triangle-right"))
+        self.play_pause_button.setToolTip("Play")
         self.setup_time_slider()
 
         source = loaded_simulation.source_path
@@ -353,7 +365,7 @@ class MainWindow(QMainWindow):
         if self.time_slider.value() < self.time_slider.maximum():
             self.time_slider.setValue(self.time_slider.value() + 1)
         else:
-            if self.play_pause_button.text() == "Pause":
+            if self._is_playing:
                 self.toggle_play_pause()
 
     def regress(self):
@@ -361,11 +373,15 @@ class MainWindow(QMainWindow):
             self.time_slider.setValue(self.time_slider.value() - 1)
 
     def toggle_play_pause(self):
-        if self.play_pause_button.text() == "Play":
-            self.play_pause_button.setText("Pause")
+        if not self._is_playing:
+            self._is_playing = True
+            self.play_pause_button.setIcon(Icons.get("pause"))
+            self.play_pause_button.setToolTip("Pause")
             self.timer.start(100)
         else:
-            self.play_pause_button.setText("Play")
+            self._is_playing = False
+            self.play_pause_button.setIcon(Icons.get("triangle-right"))
+            self.play_pause_button.setToolTip("Play")
             self.timer.stop()
 
     def get_node_indexing(self) -> int:

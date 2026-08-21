@@ -1,6 +1,7 @@
 # dice_gui/widgets/trace_window.py
 
 import math
+import numpy as np
 from dataclasses import dataclass
 from typing import Sequence
 
@@ -95,14 +96,31 @@ class TracePlotWidget(QWidget):
     def __init__(
         self,
         simulation_data: TimeSeriesData,
-        node_index: int,
+        node_index: int | Sequence[int] | None = None,
         parent=None,
         config: PlotConfig | None = None,
+        is_mean: bool = False,
+        node_indices: Sequence[int] | None = None,
     ):
         super().__init__(parent)
 
         self.simulation_data = simulation_data
-        self.node_index = node_index
+        if is_mean or node_indices is not None:
+            self.is_mean = True
+            indices = list(
+                node_indices
+                if node_indices is not None
+                else (node_index if isinstance(node_index, Sequence) else [node_index])
+            )
+            self.node_indices = indices
+            self.node_index = indices[0] if indices else 0
+        else:
+            self.is_mean = False
+            self.node_index = (
+                node_index[0] if isinstance(node_index, Sequence) else (node_index if node_index is not None else 0)
+            )
+            self.node_indices = [self.node_index]
+
         self.config = config or PlotConfig()
 
         self.current_frame = 0
@@ -177,19 +195,34 @@ class TracePlotWidget(QWidget):
         if self.simulation_data.num_frames <= 0:
             return []
 
-        return [
-            PlotSample(
-                frame=frame,
-                time=float(self.simulation_data.times[frame]),
-                value=float(
-                    self.simulation_data.x_values[frame, self.node_index]
-                ),
-                spin=int(
-                    self.simulation_data.spins[frame, self.node_index]
-                ),
-            )
-            for frame in range(self.bound_left, self.bound_right + 1)
-        ]
+        if self.is_mean:
+            samples = []
+            for frame in range(self.bound_left, self.bound_right + 1):
+                x_vals = self.simulation_data.x_values[frame, self.node_indices]
+                mean_val = float(np.mean(x_vals)) if len(x_vals) > 0 else 0.0
+                samples.append(
+                    PlotSample(
+                        frame=frame,
+                        time=float(self.simulation_data.times[frame]),
+                        value=mean_val,
+                        spin=0,
+                    )
+                )
+            return samples
+        else:
+            return [
+                PlotSample(
+                    frame=frame,
+                    time=float(self.simulation_data.times[frame]),
+                    value=float(
+                        self.simulation_data.x_values[frame, self.node_index]
+                    ),
+                    spin=int(
+                        self.simulation_data.spins[frame, self.node_index]
+                    ),
+                )
+                for frame in range(self.bound_left, self.bound_right + 1)
+            ]
 
     def _calculate_geometry(
         self,
@@ -584,16 +617,33 @@ class TracePlotWidget(QWidget):
 class TraceWindow(QMainWindow):
     def __init__(
         self,
-        node_index: int,
-        point_id: str,
-        simulation_data: TimeSeriesData,
-        parent_window: QMainWindow,
+        node_index: int | Sequence[int] | None = None,
+        point_id: str = "",
+        simulation_data: TimeSeriesData = None,
+        parent_window: QMainWindow = None,
         node_indexing: int = 1,
         plot_config: PlotConfig | None = None,
+        is_mean: bool = False,
+        node_indices: Sequence[int] | None = None,
     ):
         super().__init__(parent_window)
 
-        self.node_index = node_index
+        if is_mean or node_indices is not None:
+            self.is_mean = True
+            indices = list(
+                node_indices
+                if node_indices is not None
+                else (node_index if isinstance(node_index, Sequence) else [node_index])
+            )
+            self.node_indices = sorted(indices)
+            self.node_index = self.node_indices[0] if self.node_indices else 0
+        else:
+            self.is_mean = False
+            self.node_index = (
+                node_index[0] if isinstance(node_index, Sequence) else (node_index if node_index is not None else 0)
+            )
+            self.node_indices = [self.node_index]
+
         self.point_id = point_id
         self.simulation_data = simulation_data
         self.parent_window = parent_window
@@ -604,22 +654,30 @@ class TraceWindow(QMainWindow):
         self.bound_right: int | None = None
         self.current_frame = 0
 
-        displayed_index = node_index + node_indexing
-        identifier = point_id or ""
-        self.setWindowTitle(
-            f"Point # {displayed_index}  Id: {identifier}"
-        )
+        if self.is_mean:
+            displayed_indices = [idx + node_indexing for idx in self.node_indices]
+            indices_str = ", ".join(str(idx) for idx in displayed_indices)
+            self.setWindowTitle(f"Mean X of Points # {indices_str}")
+        else:
+            displayed_index = self.node_index + node_indexing
+            identifier = point_id or ""
+            self.setWindowTitle(
+                f"Point # {displayed_index}  Id: {identifier}"
+            )
         self.resize(*DEFAULT_WINDOW_SIZE)
 
         self.plot_widget = TracePlotWidget(
-            simulation_data,
-            node_index,
-            self,
+            simulation_data=simulation_data,
+            node_index=self.node_index,
+            parent=self,
             config=plot_config,
+            is_mean=self.is_mean,
+            node_indices=self.node_indices,
         )
         self.setCentralWidget(self.plot_widget)
 
-        self.set_frame_index(parent_window.time_slider.value())
+        if parent_window is not None:
+            self.set_frame_index(parent_window.time_slider.value())
 
     def set_frame_index(self, frame_index: int) -> None:
         max_frame = self.simulation_data.num_frames - 1

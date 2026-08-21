@@ -184,6 +184,12 @@ class MainWindow(QMainWindow):
             self.on_point_id_changed
         )
         self.point_info_panel.trace_clicked.connect(self.on_trace_clicked)
+        self.point_info_panel.mean_trace_clicked.connect(
+            self.on_mean_trace_clicked
+        )
+        self.point_info_panel.close_all_traces_clicked.connect(
+            self.on_close_all_traces_clicked
+        )
 
     def _populate_parser_combo_box(self):
         self.parser_combo_box.clear()
@@ -527,6 +533,43 @@ class MainWindow(QMainWindow):
         )
         self.trace_windows.append(tw)
         tw.show()
+
+    def on_mean_trace_clicked(self) -> None:
+        """
+        Handle Mean Value Trace button click.
+        """
+        if not self.selected_point_indices:
+            self.status_bar.showMessage("No points are selected")
+            return
+
+        if self.simulation_data is None:
+            return
+
+        selected_sorted = sorted(self.selected_point_indices)
+        for tw in self.trace_windows:
+            if getattr(tw, "is_mean", False) and getattr(tw, "node_indices", []) == selected_sorted:
+                tw.raise_()
+                tw.activateWindow()
+                return
+
+        tw = TraceWindow(
+            simulation_data=self.simulation_data,
+            parent_window=self,
+            node_indexing=self.get_node_indexing(),
+            is_mean=True,
+            node_indices=selected_sorted,
+        )
+        self.trace_windows.append(tw)
+        tw.show()
+
+    def on_close_all_traces_clicked(self) -> None:
+        """
+        Close all open trace windows.
+        """
+        for tw in list(self.trace_windows):
+            tw.close()
+        self.trace_windows.clear()
+        self.status_bar.showMessage("Closed all tracing windows")
 
     def on_point_id_changed(self, node_index: int, new_id: str) -> None:
         if 0 <= node_index < len(self.point_ids):

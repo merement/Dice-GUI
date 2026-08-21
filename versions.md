@@ -1,5 +1,12 @@
 # Versions History
 
+## [0.1.3] - 2026-08-21
+- Refactored `history_window` to `trace_window`, updating classes (`TraceWindow`, `TracePlotWidget`), attributes, and test suite.
+- Feature 1: Replaced playback control button text labels with vector SVG icons (`triangle-right.svg`, `pause.svg`, `step-right.svg`, `step-left.svg`) and tooltips.
+- Feature 2: Replaced `"More..."` text button in `MetadataPanel` with `arrow-bold-filled-right.svg` icon and tooltip `"Show full set of metadata records"`.
+- Feature 3: Replaced single `Trace` button in `PointInfoPanel` with 3 icon buttons (Trace, Mean value, Close all). Implemented `Mean Value Trace` window plotting average X coordinates across selected nodes. Added Close All Tracing Windows action.
+- Feature 4: Implemented `Ctrl+C` shortcut on `PointInfoPanel` table to copy selected rows formatted as tab-separated fields per line with the `Id` (label) cell in double quotes.
+
 ## [0.1.2] - 2026-08-12
 - Updated `MainWindow` window title to display the open simulation file name (basename).
 - Added `file name` record (with full file path) as the first record displayed in the "Metadata Overview" window (`MetadataDialog`).

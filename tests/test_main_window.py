@@ -113,6 +113,7 @@ def test_main_window_drop_file(qapp, tmp_path):
     assert window.loaded_simulation is not None
     assert window.loaded_simulation.parser_id == "mock_id"
     assert window.loaded_simulation.source_path == dummy_file
+    assert window.windowTitle() == "test.mock"
 
 
 def test_main_window_drop_non_file(qapp, tmp_path):

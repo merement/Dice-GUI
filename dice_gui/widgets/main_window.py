@@ -262,6 +262,11 @@ class MainWindow(QMainWindow):
         self.setup_time_slider()
 
         source = loaded_simulation.source_path
+        if source:
+            self.setWindowTitle(os.path.basename(str(source)))
+        else:
+            self.setWindowTitle("Dice GUI")
+
         source_str = f"Loaded: {source}" if source is not None else "Loaded simulation"
 
         warnings_list = []
@@ -280,7 +285,7 @@ class MainWindow(QMainWindow):
         metadata = None
         if loaded_simulation.static_data is not None:
             metadata = loaded_simulation.static_data.metadata
-        self.metadata_panel.set_metadata(metadata)
+        self.metadata_panel.set_metadata(metadata, source_path=source)
 
     # Example placeholder showing how metadata can be updated dynamically
     # programmatically and propagate automatically to the MetadataPanel:

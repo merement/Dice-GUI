@@ -74,13 +74,34 @@ def test_metadata_panel_clear_metadata(qapp):
 
 def test_metadata_dialog_html(qapp):
     raw_records = [
+        {"type": "file name", "path": "/path/to/simulation.txt"},
         {"type": "format", "name": "relaxed-spins", "version": 1},
     ]
     dialog = MetadataDialog(raw_records)
     html = dialog.text_browser.toHtml()
 
     # The HTML output should contain the formatted records
+    assert "file name" in html
+    assert "path : /path/to/simulation.txt" in html
     assert "format" in html
     assert "name : relaxed-spins" in html
     assert "version : 1" in html
     assert "\xa0\xa0\xa0\xa0" in html
+
+
+def test_metadata_panel_file_name_record(qapp):
+    panel = MetadataPanel()
+    meta = {
+        "has_metadata": True,
+        "title": "Simulation Title",
+        "raw_records": [{"type": "format", "name": "test"}],
+    }
+    panel.set_metadata(meta, source_path="/tmp/my_sim.txt")
+    assert len(panel._raw_records) == 2
+    assert panel._raw_records[0] == {"type": "file name", "path": "/tmp/my_sim.txt"}
+
+    panel.show_more_metadata()
+    html = panel._metadata_dialog.text_browser.toHtml()
+    assert "file name" in html
+    assert "path : /tmp/my_sim.txt" in html
+

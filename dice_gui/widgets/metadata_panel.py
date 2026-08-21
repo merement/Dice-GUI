@@ -111,21 +111,37 @@ class MetadataPanel(QGroupBox):
         self._metadata_dialog.raise_()
         self._metadata_dialog.activateWindow()
 
-    def set_metadata(self, metadata: dict | None):
-        if metadata is None or not metadata.get("has_metadata", False):
+    def set_metadata(self, metadata: dict | None, source_path: str | None = None):
+        if (metadata is None or not metadata.get("has_metadata", False)) and not source_path:
             self.clear_metadata()
             return
 
-        self.meta_title_label.setText(str(metadata.get("title", "- -")))
-        self.meta_notes_label.setText(str(metadata.get("notes", "- -")))
-        self.meta_created_label.setText(str(metadata.get("created", "- -")))
+        if metadata is None or not metadata.get("has_metadata", False):
+            self.meta_title_label.setText("- -")
+            self.meta_notes_label.setText("- -")
+            self.meta_created_label.setText("- -")
+            self.meta_base_label.setText("- -")
+            raw_records = []
+        else:
+            self.meta_title_label.setText(str(metadata.get("title", "- -")))
+            self.meta_notes_label.setText(str(metadata.get("notes", "- -")))
+            self.meta_created_label.setText(str(metadata.get("created", "- -")))
 
-        base_val = metadata.get("base")
-        if base_val is None:
-            base_val = 1
-        self.meta_base_label.setText(str(base_val))
+            base_val = metadata.get("base")
+            if base_val is None:
+                base_val = 1
+            self.meta_base_label.setText(str(base_val))
 
-        self._raw_records = metadata.get("raw_records", [])
+            raw_records = list(metadata.get("raw_records", []))
+
+        if source_path:
+            file_rec = {"type": "file name", "path": str(source_path)}
+            raw_records = [file_rec] + [
+                r for r in raw_records
+                if not (isinstance(r, dict) and r.get("type") == "file name")
+            ]
+
+        self._raw_records = raw_records
         self.meta_more_button.setEnabled(len(self._raw_records) > 0)
 
         if self._metadata_dialog is not None and self._metadata_dialog.isVisible():

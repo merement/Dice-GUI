@@ -48,8 +48,10 @@ class PointInfoPanel(QGroupBox):
 
         # Filter buttons/checklist (Show all / selected)
         filter_layout = QHBoxLayout()
-        self.show_all_radio = QRadioButton("Show all", self)
-        self.show_selected_radio = QRadioButton("Show selected", self)
+        self.show_all_radio = QRadioButton("All", self)
+        # self.show_all_radio = QRadioButton("Show all", self)
+        # self.show_selected_radio = QRadioButton("Show selected", self)
+        self.show_selected_radio = QRadioButton("Selected", self)
         self.show_all_radio.setChecked(True)
         self.trace_button = QPushButton("Trace", self)
 

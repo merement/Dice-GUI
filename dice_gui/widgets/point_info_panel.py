@@ -1,6 +1,8 @@
 import numpy as np
 from PyQt6.QtCore import Qt, pyqtSignal
+from PyQt6.QtGui import QKeySequence, QShortcut
 from PyQt6.QtWidgets import (
+    QApplication,
     QGroupBox,
     QTableWidget,
     QTableWidgetItem,
@@ -118,6 +120,9 @@ class PointInfoPanel(QGroupBox):
         self.trace_button.clicked.connect(self.trace_clicked.emit)
         self.mean_trace_button.clicked.connect(self.mean_trace_clicked.emit)
         self.close_all_traces_button.clicked.connect(self.close_all_traces_clicked.emit)
+
+        self.copy_shortcut = QShortcut(QKeySequence.StandardKey.Copy, self.table)
+        self.copy_shortcut.activated.connect(self.copy_selected_rows_to_clipboard)
 
     def update_info(self, time_value: float, index: int, spin: int, x_value: float):
         """
@@ -270,3 +275,36 @@ class PointInfoPanel(QGroupBox):
                         selected_indices.add(node_index)
 
         self.point_selected.emit(selected_indices)
+
+    def copy_selected_rows_to_clipboard(self) -> None:
+        """
+        Copy data of selected rows in the table to system clipboard.
+        Format: tab-separated fields per line, with the Id (label) enclosed in double quotes.
+        """
+        selected_ranges = self.table.selectedRanges()
+        if not selected_ranges:
+            return
+
+        selected_rows = set()
+        for r in selected_ranges:
+            for row in range(r.topRow(), r.bottomRow() + 1):
+                selected_rows.add(row)
+
+        sorted_rows = sorted(selected_rows)
+        lines = []
+        for row in sorted_rows:
+            row_items = []
+            for col in range(self.table.columnCount()):
+                item = self.table.item(row, col)
+                text = item.text() if item is not None else ""
+                if col == 1:  # Id column (label cell)
+                    row_items.append(f'"{text}"')
+                else:
+                    row_items.append(text)
+            lines.append("\t".join(row_items))
+
+        if lines:
+            clipboard_text = "\n".join(lines)
+            clipboard = QApplication.clipboard()
+            if clipboard is not None:
+                clipboard.setText(clipboard_text)

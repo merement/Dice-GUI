@@ -1,7 +1,6 @@
-# dice_gui/widgets/history_window.py
+# dice_gui/widgets/trace_window.py
 
 import math
-
 from dataclasses import dataclass
 from typing import Sequence
 
@@ -17,6 +16,7 @@ from dice_gui.widgets.circle_view import (
 )
 
 DEFAULT_TIME_WINDOW = 50
+TIME_WINDOW = DEFAULT_TIME_WINDOW
 DEFAULT_WINDOW_SIZE = (600, 400)
 
 
@@ -91,7 +91,7 @@ class PlotGeometry:
     current_x: float
 
 
-class HistoryPlotWidget(QWidget):
+class TracePlotWidget(QWidget):
     def __init__(
         self,
         simulation_data: TimeSeriesData,
@@ -581,7 +581,7 @@ class HistoryPlotWidget(QWidget):
         }.get(spin, COLOR_SPIN_NONE)
 
 
-class HistoryWindow(QMainWindow):
+class TraceWindow(QMainWindow):
     def __init__(
         self,
         node_index: int,
@@ -589,7 +589,6 @@ class HistoryWindow(QMainWindow):
         simulation_data: TimeSeriesData,
         parent_window: QMainWindow,
         node_indexing: int = 1,
-        # time_window: int = DEFAULT_TIME_WINDOW,
         plot_config: PlotConfig | None = None,
     ):
         super().__init__(parent_window)
@@ -599,7 +598,6 @@ class HistoryWindow(QMainWindow):
         self.simulation_data = simulation_data
         self.parent_window = parent_window
         self.node_indexing = node_indexing
-        # self.time_window = time_window
         self.time_window = DEFAULT_TIME_WINDOW
 
         self.bound_left: int | None = None
@@ -613,7 +611,7 @@ class HistoryWindow(QMainWindow):
         )
         self.resize(*DEFAULT_WINDOW_SIZE)
 
-        self.plot_widget = HistoryPlotWidget(
+        self.plot_widget = TracePlotWidget(
             simulation_data,
             node_index,
             self,

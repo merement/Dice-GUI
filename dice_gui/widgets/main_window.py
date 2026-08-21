@@ -28,7 +28,7 @@ from dice_gui.widgets.file_loader_panel import FileLoaderPanel
 from dice_gui.widgets.point_info_panel import PointInfoPanel
 from dice_gui.widgets.metadata_panel import MetadataPanel
 from dice_gui.widgets.zoom_window import ZoomWindow
-from dice_gui.widgets.history_window import HistoryWindow
+from dice_gui.widgets.trace_window import TraceWindow
 
 
 class MainWindow(QMainWindow):
@@ -54,7 +54,7 @@ class MainWindow(QMainWindow):
         self.selected_point_indices: set[int] = set()
         self.point_ids: list[str] = []
         self.zoom_windows: list[ZoomWindow] = []
-        self.history_windows: list[HistoryWindow] = []
+        self.trace_windows: list[TraceWindow] = []
 
         self.timer = QTimer(self)
         self.timer.timeout.connect(self.progress)
@@ -239,9 +239,9 @@ class MainWindow(QMainWindow):
             zw.close()
         self.zoom_windows.clear()
 
-        for hw in list(self.history_windows):
-            hw.close()
-        self.history_windows.clear()
+        for tw in list(self.trace_windows):
+            tw.close()
+        self.trace_windows.clear()
 
         # Initialize point IDs from static_data metadata or default to empty strings
         num_nodes = loaded_simulation.dynamic_data.num_nodes
@@ -346,8 +346,8 @@ class MainWindow(QMainWindow):
         for zw in self.zoom_windows:
             zw.zoomed_view.set_frame(frame)
 
-        for hw in self.history_windows:
-            hw.set_frame_index(time_index)
+        for tw in self.trace_windows:
+            tw.set_frame_index(time_index)
 
     def progress(self):
         if self.time_slider.value() < self.time_slider.maximum():
@@ -485,32 +485,32 @@ class MainWindow(QMainWindow):
             return
 
         for node_idx in sorted(self.selected_point_indices):
-            self.open_history_window(node_idx)
+            self.open_trace_window(node_idx)
 
-    def open_history_window(self, node_index: int) -> None:
+    def open_trace_window(self, node_index: int) -> None:
         """
-        Open or focus a non-modal HistoryWindow for node_index.
+        Open or focus a non-modal TraceWindow for node_index.
         """
         # Focus window if already open
-        for hw in self.history_windows:
-            if hw.node_index == node_index:
-                hw.raise_()
-                hw.activateWindow()
+        for tw in self.trace_windows:
+            if tw.node_index == node_index:
+                tw.raise_()
+                tw.activateWindow()
                 return
 
         if self.simulation_data is None:
             return
 
         point_id = self.point_ids[node_index] if node_index < len(self.point_ids) else ""
-        hw = HistoryWindow(
+        tw = TraceWindow(
             node_index=node_index,
             point_id=point_id,
             simulation_data=self.simulation_data,
             parent_window=self,
             node_indexing=self.get_node_indexing(),
         )
-        self.history_windows.append(hw)
-        hw.show()
+        self.trace_windows.append(tw)
+        tw.show()
 
     def on_point_id_changed(self, node_index: int, new_id: str) -> None:
         if 0 <= node_index < len(self.point_ids):

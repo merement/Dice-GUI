@@ -50,8 +50,23 @@ The Point History Tracer allows visualizing the coordinate history of selected s
 
 ---
 
-## 5. Supported Metadata Schema
+## 5. Copying Table Data to Clipboard
+
+Selected rows in the **Point Info Panel** table can be copied directly to the system clipboard:
+- **Copy Shortcut**: Pressing **Ctrl+C** (or standard OS copy shortcut) while interacting with the Point Info Panel table copies all currently selected rows.
+- **Tab-Separated Format**: Data is exported in tab-separated value format (`\t`), allowing seamless pasting into spreadsheet applications (such as Excel or LibreOffice Calc) or text editors.
+- **Exported Fields**:
+  - `#`: Displayed node index (adjusted according to the global indexing base).
+  - `Id`: Node text identifier, enclosed in double quotes (e.g., `"node_A"`).
+  - `Spin`: Particle spin configuration (`+1` or `-1`).
+  - `X`: Floating-point coordinate value formatted to 6 decimal places.
+  - `ΔX`: Coordinate step difference formatted to 6 decimal places.
+
+---
+
+## 6. Supported Metadata Schema
 
 The application supports embedding machine-readable JSON metadata directly within simulation data files. This metadata defines settings such as the global indexing base, custom node IDs, simulation title, notes, and timestamp.
 
 For full schema details, parser syntax, and console stream commands, refer to the [metadata-schema.md](file:///home/misha/Documents/projects/dicing/Dice-GUI/docs/metadata-schema.md) specification.
+

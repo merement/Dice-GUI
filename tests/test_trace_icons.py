@@ -1,4 +1,4 @@
-# tests/test_feature3.py
+# tests/test_trace_icons.py
 
 import pytest
 import numpy as np

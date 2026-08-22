@@ -1,4 +1,4 @@
-# tests/test_feature4.py
+# tests/test_copy_panel_info.py
 
 import pytest
 import numpy as np

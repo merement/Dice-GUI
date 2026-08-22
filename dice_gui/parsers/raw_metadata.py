@@ -1,4 +1,4 @@
-# dice_gui/parsers/raw_metadata_parser.py
+# dice_gui/parsers/raw_metadata.py
 #
 # Implements a metadata-aware parser for DICE/Ising-type simulation data.
 # It parses legacy raw DICE/Ising-type simulation files that may contain

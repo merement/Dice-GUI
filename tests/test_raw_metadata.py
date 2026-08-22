@@ -1,4 +1,4 @@
-# tests/test_raw_metadata_parser.py
+# tests/test_raw_metadata.py
 
 import pytest
 from pathlib import Path

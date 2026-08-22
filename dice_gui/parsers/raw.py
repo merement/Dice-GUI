@@ -1,4 +1,4 @@
-# dice_gui/parsers/base.py
+# dice_gui/parsers/raw.py
 #
 # Implements the parsers for the simulation data files.
 # TimeSpinXParser (raw data parser) parses files of the form:

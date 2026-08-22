@@ -2,7 +2,7 @@
 #
 # Package initialization for parsers. Exposes public parser classes and exceptions.
 
-from .base import ParseError, TimeSpinXParser
-from .raw_metadata_parser import RawMetadataParser
+from .raw import ParseError, TimeSpinXParser
+from .raw_metadata import RawMetadataParser
 
 __all__ = ["ParseError", "TimeSpinXParser", "RawMetadataParser"]

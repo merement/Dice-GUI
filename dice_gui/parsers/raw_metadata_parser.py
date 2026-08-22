@@ -25,7 +25,7 @@ from dice_gui.domain import (
     StaticSimulationData,
     TimeSeriesData,
 )
-from dice_gui.metadata import JsonMetadataProcessor, MetadataContext
+from dice_gui.jsondata import JsonMetadataProcessor, MetadataContext
 from dice_gui.parsers import ParseError
 
 logger = logging.getLogger(__name__)

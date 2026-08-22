@@ -1,13 +1,13 @@
-# dice_gui/metadata/handlers.py
+# dice_gui/jsondata/handlers.py
 
 from __future__ import annotations
 
 from collections.abc import Mapping
 from typing import Any, Protocol
 
-from dice_gui.metadata.context import MetadataContext
-from dice_gui.metadata.state import MetadataState
-from dice_gui.metadata.validation import as_int, as_string
+from dice_gui.jsondata.context import MetadataContext
+from dice_gui.jsondata.state import MetadataState
+from dice_gui.jsondata.validation import as_int, as_string
 
 
 class MetadataRecordHandler(Protocol):

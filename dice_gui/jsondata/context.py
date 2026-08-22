@@ -1,4 +1,4 @@
-# dice_gui/metadata/context.py
+# dice_gui/jsondata/context.py
 
 from __future__ import annotations
 

@@ -1,12 +1,12 @@
-# dice_gui/metadata/state.py
+# dice_gui/jsondata/state.py
 
 from __future__ import annotations
 
 from dataclasses import dataclass, field
 from typing import Any
 
-from dice_gui.metadata.context import MetadataContext
-from dice_gui.metadata.diagnostics import (
+from dice_gui.jsondata.context import MetadataContext
+from dice_gui.jsondata.diagnostics import (
     DiagnosticSeverity,
     MetadataDiagnostic,
 )

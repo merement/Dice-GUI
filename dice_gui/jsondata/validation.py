@@ -1,4 +1,4 @@
-# dice_gui/metadata/validation.py
+# dice_gui/jsondata/validation.py
 
 from __future__ import annotations
 

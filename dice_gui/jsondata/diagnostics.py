@@ -1,4 +1,4 @@
-# dice_gui/metadata/diagnostics.py
+# dice_gui/jsondata/diagnostics.py
 
 from __future__ import annotations
 
@@ -6,7 +6,7 @@ from dataclasses import dataclass
 from enum import Enum
 from typing import Any
 
-from dice_gui.metadata.context import MetadataContext
+from dice_gui.jsondata.context import MetadataContext
 
 
 class DiagnosticSeverity(str, Enum):

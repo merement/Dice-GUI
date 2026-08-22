@@ -1,11 +1,11 @@
-# dice_gui/metadata/records.py
+# dice_gui/jsondata/records.py
 
 from __future__ import annotations
 
 from dataclasses import dataclass
 from typing import Any
 
-from dice_gui.metadata.context import MetadataContext
+from dice_gui.jsondata.context import MetadataContext
 
 
 @dataclass(frozen=True)

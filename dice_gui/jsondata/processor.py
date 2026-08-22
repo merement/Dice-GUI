@@ -1,4 +1,4 @@
-# dice_gui/metadata/processor.py
+# dice_gui/jsondata/processor.py
 
 from __future__ import annotations
 
@@ -7,12 +7,12 @@ import logging
 from collections.abc import Mapping
 from typing import Any
 
-from dice_gui.metadata.context import MetadataContext
-from dice_gui.metadata.diagnostics import (
+from dice_gui.jsondata.context import MetadataContext
+from dice_gui.jsondata.diagnostics import (
     DiagnosticSeverity,
     MetadataDiagnostic,
 )
-from dice_gui.metadata.handlers import (
+from dice_gui.jsondata.handlers import (
     FormatRecordHandler,
     MetadataRecordHandler,
     NodeIndexingRecordHandler,
@@ -20,8 +20,8 @@ from dice_gui.metadata.handlers import (
     SimpleValueRecordHandler,
     UnknownRecordHandler,
 )
-from dice_gui.metadata.state import MetadataState
-from dice_gui.metadata.validation import (
+from dice_gui.jsondata.state import MetadataState
+from dice_gui.jsondata.validation import (
     as_record_type,
     shallow_json_object_copy,
 )

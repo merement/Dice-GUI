@@ -1,5 +1,11 @@
 # Versions History
 
+## [0.1.4] - 2026-08-22
+- Implemented `NdjsonParser` (`dice_gui/parsers/ndjson.py`) supporting NDJSON (JSON Lines) simulation data files (`id = "ndjson"`, `name = "NDJSON (JSON Lines)"`).
+- Added "Automatic" (`auto`) option as default format selection in `FileLoaderPanel` / `MainWindow`, which automatically detects NDJSON if file starts with `{` or falls back to Raw + metadata.
+- Updated main window title bar to display parser name in parentheses after filename (e.g. `simulation.ndjson (NDJSON (JSON Lines))`).
+- Documented NDJSON format support in `docs/features.md` and `README.md`.
+
 ## [0.1.3] - 2026-08-21
 - Refactored `history_window` to `trace_window`, updating classes (`TraceWindow`, `TracePlotWidget`), attributes, and test suite.
 - Feature 1: Replaced playback control button text labels with vector SVG icons (`triangle-right.svg`, `pause.svg`, `step-right.svg`, `step-left.svg`) and tooltips.

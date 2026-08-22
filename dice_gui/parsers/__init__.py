@@ -4,5 +4,6 @@
 
 from .raw import ParseError, TimeSpinXParser
 from .raw_metadata import RawMetadataParser
+from .ndjson import NdjsonParser
 
-__all__ = ["ParseError", "TimeSpinXParser", "RawMetadataParser"]
+__all__ = ["ParseError", "TimeSpinXParser", "RawMetadataParser", "NdjsonParser"]

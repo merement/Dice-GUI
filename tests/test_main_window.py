@@ -113,7 +113,26 @@ def test_main_window_drop_file(qapp, tmp_path):
     assert window.loaded_simulation is not None
     assert window.loaded_simulation.parser_id == "mock_id"
     assert window.loaded_simulation.source_path == dummy_file
-    assert window.windowTitle() == "test.mock"
+    assert window.windowTitle() == "test.mock (Mock Parser)"
+
+
+def test_main_window_title_and_auto_combo(qapp, tmp_path):
+    from dice_gui.loading import create_default_parser_registry
+
+    registry = create_default_parser_registry()
+    window = MainWindow(registry)
+
+    # Check combo box default is Automatic
+    assert window.parser_combo_box.currentText() == "Automatic"
+    assert window.parser_combo_box.currentData() == "auto"
+
+    ndjson_file = tmp_path / "sim.ndjson"
+    ndjson_file.write_text('{"type": "sample", "time": 0.0, "r_spins": [{"state": [1, 0.5]}]}\n', encoding="utf-8")
+
+    window.load_file(str(ndjson_file), "auto")
+
+    assert window.windowTitle() == "sim.ndjson (NDJSON (JSON Lines))"
+
 
 
 def test_main_window_drop_non_file(qapp, tmp_path):

@@ -93,6 +93,22 @@ Example of a file header containing metadata:
 For more details on the metadata schema, see the [metadata-schema.md](file:///home/misha/Documents/projects/dicing/Dice-GUI/docs/metadata-schema.md).
 
 
+### NDJSON (JSON Lines)
+
+This format represents simulation frames and metadata as newline-delimited JSON objects.
+
+Each line is an individual JSON object. Sample records are identified by `"type": "sample"`, containing `"time"` (float) and `"r_spins"` (a list of objects each containing `"state": [spin, x]`). Machine-readable metadata objects (such as format declarations, node indexing base, titles, notes, and node names) can appear anywhere in the file.
+
+Example:
+
+```json
+{"type": "format", "name": "relaxed-spins", "version": 1}
+{"type": "node_indexing", "base": 1}
+{"type": "node", "index": 1, "name": "CTRL_1"}
+{"type": "sample", "time": 0.0, "r_spins": [{"state": [1, 0.12]}, {"state": [-1, 0.44]}]}
+```
+
+
 ## Planned Features
 
 Planned or desired functionality includes:

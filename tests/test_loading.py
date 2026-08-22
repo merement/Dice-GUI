@@ -91,5 +91,32 @@ def test_file_load_service_parser_exception(tmp_path: Path):
     file_path = tmp_path / "test.dat"
     file_path.write_text("dummy", encoding="utf-8")
     
-    with pytest.raises(LoadError, match="Failed to load .* with parser 'exploder': Boom!"):
+    with pytest.raises(LoadError, match="Could not load “test.dat” as Exploder:"):
         service.load_file(file_path)
+
+
+def test_detect_parser_id(tmp_path: Path):
+    from dice_gui.loading import detect_parser_id, create_default_parser_registry
+
+    ndjson_file = tmp_path / "data.ndjson"
+    ndjson_file.write_text('  {"type": "sample"}\n', encoding="utf-8")
+    assert detect_parser_id(ndjson_file) == "ndjson"
+
+    raw_file = tmp_path / "data.dat"
+    raw_file.write_text("#@ metadata\n0.0 1 0.1", encoding="utf-8")
+    assert detect_parser_id(raw_file) == "raw-metadata"
+
+
+def test_automatic_file_load_service(tmp_path: Path):
+    from dice_gui.loading import create_default_parser_registry
+
+    registry = create_default_parser_registry()
+    service = FileLoadService(registry)
+
+    ndjson_file = tmp_path / "sim.ndjson"
+    ndjson_file.write_text('{"type": "sample", "time": 0.0, "r_spins": [{"state": [1, 0.5]}]}\n', encoding="utf-8")
+
+    loaded = service.load_file(ndjson_file, parser_id="auto")
+    assert loaded.parser_id == "ndjson"
+    assert loaded.dynamic_data.num_frames == 1
+

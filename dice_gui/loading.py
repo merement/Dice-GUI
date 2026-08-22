@@ -1,18 +1,12 @@
-# dice_gui/loading.py or dice_gui/parsers.py
-
 from pathlib import Path
 
 from dice_gui.domain import LoadedSimulation
-from dice_gui.parsers import ParseError, TimeSpinXParser, RawMetadataParser
-
-# from typing import Protocol
-# class SimulationParser(Protocol):
-#     id: str
-#     name: str
-#     file_filter: str
-
-#     def parse_file(self, file_path: str | Path) -> LoadedSimulation:
-#         pass
+from dice_gui.parsers import (
+    ParseError,
+    TimeSpinXParser,
+    RawMetadataParser,
+    NdjsonParser,
+)
 
 
 class UnknownParserError(Exception):
@@ -60,8 +54,28 @@ class ParserRegistry:
 def create_default_parser_registry() -> ParserRegistry:
     registry = ParserRegistry()
     registry.register(RawMetadataParser(), default=True)
+    registry.register(NdjsonParser(), default=False)
     registry.register(TimeSpinXParser(), default=False)
     return registry
+
+
+def detect_parser_id(file_path: str | Path) -> str:
+    """
+    Determines input file format based on syntax:
+    If the first non-whitespace character in the file is '{', returns 'ndjson';
+    otherwise returns 'raw-metadata'.
+    """
+    path = Path(file_path)
+    with path.open("r", encoding="utf-8", errors="replace") as f:
+        while True:
+            chunk = f.read(1024)
+            if not chunk:
+                return "raw-metadata"
+            stripped = chunk.lstrip()
+            if stripped:
+                if stripped[0] == "{":
+                    return "ndjson"
+                return "raw-metadata"
 
 
 class LoadError(Exception):
@@ -79,26 +93,39 @@ class FileLoadService:
     ) -> LoadedSimulation:
         path = Path(file_path)
 
-        if parser_id is None:
-            parser_id = self.parser_registry.default_parser_id
+        requested_mode = parser_id
+        if parser_id == "auto" or parser_id is None:
+            if parser_id == "auto":
+                detected = detect_parser_id(path)
+                if detected in self.parser_registry:
+                    effective_parser_id = detected
+                else:
+                    effective_parser_id = self.parser_registry.default_parser_id
+            else:
+                effective_parser_id = self.parser_registry.default_parser_id
+        else:
+            effective_parser_id = parser_id
 
-        parser = self.parser_registry.get(parser_id)
+        parser = self.parser_registry.get(effective_parser_id)
 
         try:
-            if hasattr(parser, "parse_raw_file"):
+            if hasattr(parser, "parse_file"):
+                loaded = parser.parse_file(file_path)
+            elif hasattr(parser, "parse_raw_file"):
                 loaded = parser.parse_raw_file(file_path)
             else:
-                loaded = parser.parse_file(file_path)
-        except ParseError:
-            raise
+                raise LoadError(f"Parser {effective_parser_id!r} has no parse method.")
+        except ParseError as exc:
+            mode_desc = f"{parser.name} (Automatic)" if requested_mode == "auto" else parser.name
+            raise ParseError(f"Could not load “{path.name}” as {mode_desc}:\n{exc}") from exc
         except FileNotFoundError:
             raise
         except Exception as exc:
-            raise LoadError(
-                f"Failed to load {path} with parser {parser_id!r}: {exc}"
-            ) from exc
+            mode_desc = f"{parser.name} (Automatic)" if requested_mode == "auto" else parser.name
+            raise LoadError(f"Could not load “{path.name}” as {mode_desc}:\n{exc}") from exc
 
         loaded.source_path = path
-        loaded.parser_id = parser_id
+        loaded.parser_id = effective_parser_id
 
         return loaded
+

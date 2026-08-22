@@ -70,3 +70,15 @@ The application supports embedding machine-readable JSON metadata directly withi
 
 For full schema details, parser syntax, and console stream commands, refer to the [metadata-schema.md](file:///home/misha/Documents/projects/dicing/Dice-GUI/docs/metadata-schema.md) specification.
 
+---
+
+## 7. NDJSON (JSON Lines) Data Support & Automatic Format Detection
+
+`Dice-GUI` supports simulation files formatted as NDJSON (Newline-Delimited JSON / JSON Lines):
+- **NDJSON Format**: Each non-empty line in the file contains a self-contained JSON object. Sample records are designated with `"type": "sample"`, containing `"time"` and an `"r_spins"` array of `{"state": [spin, x]}` node objects. Metadata records (e.g. `"type": "node_indexing"`, `"node"`, `"title"`, `"created"`) can be freely interleaved.
+- **Automatic Format Selection**: The input format selector defaults to **"Automatic"**. In this mode, `Dice-GUI` inspects the first non-whitespace character of the file:
+  - If the first non-whitespace character is `{`, the **NDJSON** parser is automatically selected.
+  - Otherwise, the **Raw + metadata** parser is selected.
+- **Explicit Override**: Choosing a specific parser format in the dropdown menu overrides automatic detection. Drag-and-drop file imports respect the currently selected format mode.
+- **Window Title Display**: The main window title bar displays the opened file name followed by the active parser name in parentheses (e.g. `simulation.ndjson (NDJSON (JSON Lines))`).
+

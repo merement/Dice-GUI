@@ -37,7 +37,7 @@ class MainWindow(QMainWindow):
         self,
         parser_registry: ParserRegistry,
         initial_file: str | None = None,
-        initial_parser_id: str = "raw",
+        initial_parser_id: str = "auto",
     ):
         super().__init__()
 
@@ -49,7 +49,8 @@ class MainWindow(QMainWindow):
 
         self.parser_registry = parser_registry
         self.file_load_service = FileLoadService(parser_registry)
-        initial_parser_id = parser_registry.default_parser_id
+        if initial_parser_id is None:
+            initial_parser_id = "auto"
 
         self.loaded_simulation = None
         self.selected_point_indices: set[int] = set()
@@ -193,31 +194,52 @@ class MainWindow(QMainWindow):
 
     def _populate_parser_combo_box(self):
         self.parser_combo_box.clear()
+        self.parser_combo_box.addItem("Automatic", "auto")
+        auto_tooltip = (
+            "Automatic uses NDJSON when the file begins with a JSON object; "
+            "otherwise it uses Raw + metadata. Choose a specific format to disable "
+            "automatic detection."
+        )
+        self.parser_combo_box.setToolTip(auto_tooltip)
+        self.parser_combo_box.setItemData(0, auto_tooltip, Qt.ItemDataRole.ToolTipRole)
+
         for parser in self.parser_registry.parsers():
             self.parser_combo_box.addItem(parser.name, parser.id)
 
-        default_index = self.parser_combo_box.findData(
-            self.parser_registry.default_parser_id
-        )
-
-        if default_index >= 0:
-            self.parser_combo_box.setCurrentIndex(default_index)
-
+        self.parser_combo_box.setCurrentIndex(0)
         self._update_file_loader_filter()
 
-    def selected_parser(self) -> str | None:
+    def selected_parser(self):
         parser_id = self.selected_parser_id()
-        if parser_id is None:
+        if parser_id is None or parser_id == "auto":
             return None
-        return self.parser_registry.get(parser_id)
+        try:
+            return self.parser_registry.get(parser_id)
+        except Exception:
+            return None
 
     def _update_file_loader_filter(self):
+        parser_id = self.selected_parser_id()
+        if parser_id == "auto":
+            self.file_loader_panel.set_file_filter(
+                "All Supported Files (*.ndjson *.jsonl *.json *.dat *.txt);;"
+                "NDJSON Files (*.ndjson *.jsonl *.json);;"
+                "Raw data with metadata (*.dat *.txt);;"
+                "Raw time/spin/x data (*.dat *.txt);;"
+                "All Files (*)"
+            )
+            return
+
         parser = self.selected_parser()
         if parser is None:
             self.file_loader_panel.set_file_filter("All Files (*)")
             return
 
-        file_filter = getattr(parser, "file_filter", "All Files (*)")
+        file_filter = getattr(
+            parser,
+            "file_dialog_filter",
+            getattr(parser, "file_filter", "All Files (*)"),
+        )
         if "All Files (*)" not in file_filter:
             file_filter = f"{file_filter};;All Files (*)"
 
@@ -280,10 +302,25 @@ class MainWindow(QMainWindow):
         self.setup_time_slider()
 
         source = loaded_simulation.source_path
+        parser_id = getattr(loaded_simulation, "parser_id", None)
+        parser_name = ""
+        if parser_id:
+            try:
+                parser_name = self.parser_registry.get(parser_id).name
+            except Exception:
+                parser_name = parser_id
+
         if source:
-            self.setWindowTitle(os.path.basename(str(source)))
+            file_name = os.path.basename(str(source))
+            if parser_name:
+                self.setWindowTitle(f"{file_name} ({parser_name})")
+            else:
+                self.setWindowTitle(file_name)
         else:
-            self.setWindowTitle("Dice GUI")
+            if parser_name:
+                self.setWindowTitle(f"Dice GUI ({parser_name})")
+            else:
+                self.setWindowTitle("Dice GUI")
 
         source_str = f"Loaded: {source}" if source is not None else "Loaded simulation"
 
@@ -595,20 +632,14 @@ class MainWindow(QMainWindow):
 
     def dropEvent(self, event: QDropEvent) -> None:
         """
-        Handle drop events by opening the dropped file with the default parser.
+        Handle drop events by opening the dropped file with the currently selected format parser.
         """
         urls = event.mimeData().urls()
         if urls:
             file_path = urls[0].toLocalFile()
             if file_path and os.path.isfile(file_path):
-                default_parser_id = self.parser_registry.default_parser_id
-
-                # Update combo box selector to the default parser
-                default_index = self.parser_combo_box.findData(default_parser_id)
-                if default_index >= 0:
-                    self.parser_combo_box.setCurrentIndex(default_index)
-
-                self.load_file(file_path, default_parser_id)
+                current_parser_id = self.selected_parser_id() or "auto"
+                self.load_file(file_path, current_parser_id)
                 event.acceptProposedAction()
             else:
                 event.ignore()
